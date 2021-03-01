@@ -1,0 +1,14 @@
+# Directories
+.vs/
+bin/
+bin-int/
+ASSInterface/vendor/boost/
+ASSInterface/vendor/GStreamer/
+ASSInterface/vendor/opencv/
+
+# Files
+*.user
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user

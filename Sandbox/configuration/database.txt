@@ -1,0 +1,1 @@
+{"connect":"mongodb://192.168.0.9:27017/?minPoolSize=3&maxPoolSize=3","name":"dbFace"}

@@ -1,0 +1,12 @@
+[submodule "ASSInterface/vendor/spdlog"]
+	path = ASSInterface/vendor/spdlog
+	url = https://github.com/gabime/spdlog
+[submodule "ASSInterface/vendor/GLFW"]
+	path = ASSInterface/vendor/GLFW
+	url = https://github.com/glfw/glfw
+[submodule "ASSInterface/vendor/imgui"]
+	path = ASSInterface/vendor/imgui
+	url = https://github.com/TheCherno/imgui
+[submodule "ASSInterface/vendor/glm"]
+	path = ASSInterface/vendor/glm
+	url = https://github.com/g-truc/glm
