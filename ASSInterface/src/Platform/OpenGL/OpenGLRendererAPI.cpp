@@ -67,8 +67,8 @@ namespace ASSInterface {
 
 	void OpenGLRendererAPI::DrawIndexed(const Ref<VertexArray>& vertexArray, int lineWidth)
 	{
-		glLineWidth(lineWidth);
-		glDrawElements(GL_LINE_STRIP, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
+		glLineWidth((float)lineWidth); //GL_LINE_STRIP
+		glDrawElements(GL_LINE_LOOP, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
 
 	}
 }

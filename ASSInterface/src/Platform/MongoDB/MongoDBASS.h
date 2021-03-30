@@ -33,7 +33,7 @@ namespace ASSInterface {
 		virtual void Get(const std::string id) override;
 		virtual void GetImages(const std::string id) override;
 		virtual void GetEvents(const std::string id) override;
-
+		virtual void Drop() override;
 	private:
 		const std::string COLLECTION_PERSON = "person";
 		const std::string COLLECTION_IMAGES = "images";

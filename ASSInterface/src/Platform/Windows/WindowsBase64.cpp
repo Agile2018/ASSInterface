@@ -66,7 +66,7 @@ namespace ASSInterface {
             char_array_4[i++] = encoded_string[in_]; in_++;
             if (i == 4) {
                 for (i = 0; i < 4; i++)
-                    char_array_4[i] = base64_chars.find(char_array_4[i]);
+                    char_array_4[i] = (unsigned char)base64_chars.find((char)char_array_4[i]);
 
                 char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
                 char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);

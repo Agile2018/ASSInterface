@@ -70,6 +70,8 @@ namespace ASSInterface {
 		else
 		{
 			ASS_CORE_ERROR("Could not open file '{0}'", filepath);
+			const char* err = "Could not open file.";
+			ASS_ERROR_PROFILE_SCOPE("OpenGLShader::ReadFile", err);
 		}
 
 		return result;
@@ -135,6 +137,7 @@ namespace ASSInterface {
 				glDeleteShader(shader);
 
 				ASS_CORE_ERROR("{0}", infoLog.data());
+				ASS_ERROR_PROFILE_SCOPE("OpenGLShader::Compile", infoLog.data());
 				ASS_CORE_ASSERT(false, "Shader compilation failure!");
 				break;
 			}
@@ -168,6 +171,7 @@ namespace ASSInterface {
 				glDeleteShader(id);
 
 			ASS_CORE_ERROR("{0}", infoLog.data());
+			ASS_ERROR_PROFILE_SCOPE("OpenGLShader::Compile", infoLog.data());
 			ASS_CORE_ASSERT(false, "Shader link failure!");
 			return;
 		}

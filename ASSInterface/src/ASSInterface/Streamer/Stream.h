@@ -23,6 +23,8 @@ namespace ASSInterface {
 		virtual float GetSizeHeightTexture() const = 0;
 		virtual std::vector<unsigned char> GetDataTexture() = 0;
 		virtual std::vector<unsigned char> GetDataRaw() = 0;
+		virtual inline const std::string GetNameWindow() = 0;
+		virtual float* GetCoordinates() = 0;
 	private:
 		virtual char* DescriptionFlow(int optionFlow, std::string descriptionFlow) = 0;
 		virtual std::string ConvertBackslashToSlash(std::string input) = 0;

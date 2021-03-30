@@ -19,16 +19,19 @@ namespace ASSInterface {
 		ObserverFlow();
 
 		//Temp
-		tracking = ASSInterface::Tracking::Create();
-		tracking->Init();
-		//
+		trackingOpenCV = ASSInterface::Tracking::CreateOpenCV();
+		trackingOpenCV->Init();
+
+		//trackingAzureFace = ASSInterface::Tracking::CreateAzureTrack();
+
+		
 
 		std::string descriptionFlow;
 		std::string nameFile = "video" + std::to_string(indexChannel) + ".txt";
-		configuration = ASSInterface::Configuration::CreateConfigVideo(nameFile);
-		//configuration->ParseToFile();
+		configuration = ASSInterface::Configuration::CreateConfigVideo(nameFile);		
 		configuration->ParseToObject();
-
+		std::any anyLbl = configuration->GetParam("label");
+		nameWindow = std::any_cast<std::string>(anyLbl);
 		std::any anySrc = configuration->GetParam("sourceFlow");
 		if (anySrc.has_value())
 		{
@@ -56,12 +59,16 @@ namespace ASSInterface {
 			else
 			{
 				ASS_ERROR("Description flow empty");
+				const char* err = "Description flow empty";
+				ASS_ERROR_PROFILE_SCOPE("ASGStreamer::ASGStreamer", err);
 			}
 
 		}		
 		else
 		{
 			ASS_ERROR("File config empty");
+			const char* err = "File config empty";
+			ASS_ERROR_PROFILE_SCOPE("ASGStreamer::ASGStreamer", err);
 		}
 
 	}
@@ -84,7 +91,8 @@ namespace ASSInterface {
 		GError* gError = nullptr;
 		pipeline = gst_parse_launch(description, &gError);
 		if (gError) {
-			ASS_ERROR("Could not construct pipeline: {0}", gError->message);
+			ASS_ERROR("Could not construct pipeline: {0}", gError->message);			
+			ASS_ERROR_PROFILE_SCOPE("ASGStreamer::Run", gError->message);
 			g_error_free(gError);
 			exit(-1);
 		}
@@ -109,6 +117,8 @@ namespace ASSInterface {
 		ret = gst_element_set_state(GST_ELEMENT(pipeline), GST_STATE_PLAYING);
 		if (ret == GST_STATE_CHANGE_FAILURE) {
 			ASS_ERROR("Unable to set the pipeline to the playing state.");
+			const char* err = "Unable to set the pipeline to the playing state.";
+			ASS_ERROR_PROFILE_SCOPE("ASGStreamer::Run", err);
 			gst_object_unref(pipeline);
 			exit(-1);
 		}
@@ -286,6 +296,8 @@ namespace ASSInterface {
 		GstSample* sample = gst_app_sink_pull_sample(appsink);
 		if (sample == NULL) {
 			ASS_ERROR("Null gst_app_sink_pull_sample.");
+			const char* err = "Null gst_app_sink_pull_sample.";
+			ASS_ERROR_PROFILE_SCOPE("ASGStreamer::CaptureGstBuffer", err);
 			return GstFlowReturn::GST_FLOW_ERROR;
 		}
 
@@ -311,6 +323,8 @@ namespace ASSInterface {
 			gst_buffer_unmap((buffer), &map_info);
 			gst_sample_unref(sample);
 			ASS_ERROR("False gst_buffer_map.");
+			const char* err = "False gst_buffer_map.";
+			ASS_ERROR_PROFILE_SCOPE("ASGStreamer::CaptureGstBuffer", err);
 			return GstFlowReturn::GST_FLOW_ERROR;
 		}
 
@@ -337,6 +351,7 @@ namespace ASSInterface {
 
 			gst_message_parse_error(message, &err, &debug);
 			ASS_ERROR("Error: {0}", err->message);
+			ASS_ERROR_PROFILE_SCOPE("ASGStreamer::MessageCallback", err->message);
 			g_error_free(err);
 			g_free(debug);
 			break;
@@ -406,8 +421,11 @@ namespace ASSInterface {
 
 			//Temp
 
-			tracking->SetWidth(m_Width);
-			tracking->SetHeight(m_Height);
+			trackingOpenCV->SetWidth(m_Width);
+			trackingOpenCV->SetHeight(m_Height);
+			//trackingAzureFace->SetWidth(m_Width);
+			//trackingAzureFace->SetHeight(m_Height);
+			
 		}		
 	}
 
@@ -417,37 +435,87 @@ namespace ASSInterface {
 			
 			ASS_PROFILE_FUNCTION();
 			clock_t timeStart1 = clock();
-			int width, height;
-
+						
+			//std::vector<unsigned char> flow(data, data + size);
 			mtxRaw.lock();
 			dataRawImage.clear();
 			dataRawImage.assign(data, data + size);
 			mtxRaw.unlock();
 
 			//Temp
-			tracking->Detect(dataRawImage);
+			
+			/*tbb::parallel_invoke(
+				[this, flow]() {BranchTracking(flow); },
+				[this, data, size]() {BranchVideo(data, size); }
+			);*/
 
-			std::vector<unsigned char> dataDetected = tracking->GetFlowData();
+			/*if (isFinishTrack) {
+				std::thread tbt(&ASGStreamer::BranchTracking, this, flow);
+				tbt.detach();
+			}*/
+			
 
-			unsigned char* dataTemp = SOIL_load_image_from_memory(&dataDetected[0],
-				dataDetected.size(), &width, &height, &m_Channels, SOIL_LOAD_RGB);
+			/*std::thread tbv(&ASGStreamer::BranchVideo, this, data, size);
+			tbv.detach();*/
 
-			/*unsigned char* dataTemp = SOIL_load_image_from_memory(data,
-				size, &width, &height, &m_Channels, SOIL_LOAD_RGB);	*/
+			//BranchVideo(data, size);
 
-			m_SizeImage = width * height * m_Channels;
+			trackingOpenCV->Detect(dataRawImage);
 
-			mtxTexture.lock();
-			dataImage.clear();
-			dataImage.assign(dataTemp, dataTemp + m_SizeImage);
-			mtxTexture.unlock();
-			SOIL_free_image_data(dataTemp);
+			std::vector<unsigned char> dataDetected = trackingOpenCV->GetFlowData();
+
+			BranchVideo(dataDetected);
 
 			clock_t duration1 = clock() - timeStart1;
 			int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
 
 			ASS_INFO("Time Load Image {0}", durationMs1);
 		}
+		
+	}
+	void ASGStreamer::BranchTracking(std::vector<unsigned char> data)
+	{
+				
+		isFinishTrack = false;
+		//trackingAzureFace->Detect(data);
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		isFinishTrack = true;			
+		
+	}
+
+	void ASGStreamer::BranchVideo(std::vector<unsigned char> data) {
+		int width, height;
+
+		unsigned char* dataTemp = SOIL_load_image_from_memory(&data[0],
+			(int)data.size(), &width, &height, &m_Channels, SOIL_LOAD_RGB);
+
+		m_SizeImage = width * height * m_Channels;
+
+		mtxTexture.lock();
+		dataImage.clear();
+		dataImage.assign(dataTemp, dataTemp + m_SizeImage);
+		mtxTexture.unlock();
+		SOIL_free_image_data(dataTemp);
+	}
+
+	void ASGStreamer::BranchVideo(unsigned char* data, int size)
+	{
+		
+		int width, height;
+
+		unsigned char* copyFlow = new unsigned char[size];
+		memcpy(copyFlow, data, size);
+
+		unsigned char* dataTemp = SOIL_load_image_from_memory(copyFlow,
+			size, &width, &height, &m_Channels, SOIL_LOAD_RGB);
+
+		m_SizeImage = width * height * m_Channels;
+
+		mtxTexture.lock();
+		dataImage.clear();
+		dataImage.assign(dataTemp, dataTemp + m_SizeImage);
+		mtxTexture.unlock();
+		SOIL_free_image_data(dataTemp);
 		
 	}
 }

@@ -6,7 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
-FrameVideo::FrameVideo() : Layer("FrameVideo"), m_CameraController(1280.0f / 960.0f)
+FrameVideo::FrameVideo() : Layer("FrameVideo"), m_CameraController(1024.0f / 768.0f) //1280.0f / 960.0f
 {
 	ASS_PROFILE_FUNCTION();
 
@@ -17,29 +17,30 @@ FrameVideo::FrameVideo() : Layer("FrameVideo"), m_CameraController(1280.0f / 960
 	indicesBox.push_back(4);
 	indicesBox.push_back(5);
 	indicesBox.push_back(6);
-	indicesBox.push_back(7);
+	indicesBox.push_back(7);	
 
 	vertexArrayBox.reset(ASSInterface::VertexArray::Create());
 
-	verticesBox.push_back(x - ratio); // BOTTOM LEFT TO BOTTOM RIGHT
-	verticesBox.push_back(y - ratio);
-	verticesBox.push_back(x + ratio);
-	verticesBox.push_back(y - ratio);
+	verticesBox.push_back(x - ratioWidth); // BOTTOM LEFT TO BOTTOM RIGHT
+	verticesBox.push_back(y - ratioHeight);
+	verticesBox.push_back(x + ratioWidth);
+	verticesBox.push_back(y - ratioHeight);
 
-	verticesBox.push_back(x + ratio); //BOTTOM RIGHT TO TOP RIGHT
-	verticesBox.push_back(y - ratio);
-	verticesBox.push_back(x + ratio);
-	verticesBox.push_back(y + ratio);
+	verticesBox.push_back(x + ratioWidth); //BOTTOM RIGHT TO TOP RIGHT
+	verticesBox.push_back(y - ratioHeight);
+	verticesBox.push_back(x + ratioWidth);
+	verticesBox.push_back(y + ratioHeight);
 
-	verticesBox.push_back(x + ratio); // TOP RIGHT TO TOP LEFT
-	verticesBox.push_back(y + ratio);
-	verticesBox.push_back(x - ratio);
-	verticesBox.push_back(y + ratio);
+	verticesBox.push_back(x + ratioWidth); // TOP RIGHT TO TOP LEFT
+	verticesBox.push_back(y + ratioHeight);
+	verticesBox.push_back(x - ratioWidth);
+	verticesBox.push_back(y + ratioHeight);
 
-	verticesBox.push_back(x - ratio); // TOP LEFT TO BOTTOM LEFT
-	verticesBox.push_back(y + ratio);
-	verticesBox.push_back(x - ratio);
-	verticesBox.push_back(y - ratio);
+	verticesBox.push_back(x - ratioWidth); // TOP LEFT TO BOTTOM LEFT
+	verticesBox.push_back(y + ratioHeight);
+	verticesBox.push_back(x - ratioWidth);
+	verticesBox.push_back(y - ratioHeight);
+
 	ASSInterface::Ref<ASSInterface::VertexBuffer> vertexBufferBox;
 	vertexBufferBox.reset(ASSInterface::VertexBuffer::Create(&verticesBox[0], (uint32_t)verticesBox.size() * sizeof(float))); //
 	vertexBufferBox->SetLayout({
@@ -60,10 +61,9 @@ FrameVideo::FrameVideo() : Layer("FrameVideo"), m_CameraController(1280.0f / 960
 }
 
 void FrameVideo::Init(int channel) {
-	ASS_PROFILE_FUNCTION();
-
-	nameWindow = "Video " + std::to_string(channel);
+	ASS_PROFILE_FUNCTION();	
 	m_Streamer = ASSInterface::ASSStreamer::Create(channel);
+	nameWindow = m_Streamer->GetNameWindow();
 	StartThread(threadInit, false);
 }
 
@@ -206,36 +206,74 @@ void FrameVideo::RefreshBox()
 {
 	ASS_PROFILE_FUNCTION();
 
-	if (check)
+	float* coordinatesFace = m_Streamer->GetCoordinates();
+	/*ASS_INFO("Left: {0}, Top: {1}, Width: {2}, Height: {3}", coordinatesFace[0], coordinatesFace[1], coordinatesFace[2], coordinatesFace[3]);*/
+	float xc = (coordinatesFace[0] + (coordinatesFace[2] / 2.0f));
+	float yc = (coordinatesFace[1] + (coordinatesFace[3] / 2.0f));
+
+	float px = (xc / (float)m_Streamer->GetWidth()) * 100.0f; 
+	float py = (yc / (float)m_Streamer->GetHeight()) * 100.0f; 
+
+	x = (px * 2.0f) / 100;
+	y = (py * 2.0f) / 100;
+
+	if (x < 1.0f)
+	{
+		x = (1.0f - x) * -1.0f;
+	}
+
+	if (x >= 1.0f)
+	{
+		x = x - 1.0f;
+	}
+	
+	if (y < 1.0f)
+	{
+		y = (1.0f - y);
+	}
+
+	if (y >= 1.0f)
+	{
+		y = (y - 1.0f) * -1.0f;
+	}
+
+	float prw = (coordinatesFace[2] / (float)m_Streamer->GetWidth()) * 100.0f;
+	float prh = (coordinatesFace[3] / (float)m_Streamer->GetHeight()) * 100.0f;
+	ratioWidth = prw / 100.0f; //
+	ratioHeight = prh / 100.0f;
+
+	/*if (check)
 	{
 		check = false;
-		x = 0.0f, y = 0.0f, ratio = 0.15f;
+		x = 0.0f, y = 0.0f, ratioHeight = 0.15f, ratioWidth = 0.2f;
 	}
 	else {
 		check = true;
-		x = -0.25f, y = 0.25f, ratio = 0.1f;
-	}
+		x = -0.25f, y = 0.25f, ratioHeight = 0.1f, ratioWidth = 0.1f;
+	}*/
+
+	//ASS_INFO("X: {0}, Y: {1}, RW: {2}, RH: {3}", x, y, ratioWidth, ratioHeight);
 
 	verticesBox.clear();
-	verticesBox.push_back(x - ratio); // BOTTOM LEFT TO BOTTOM RIGHT
-	verticesBox.push_back(y - ratio);
-	verticesBox.push_back(x + ratio);
-	verticesBox.push_back(y - ratio);
+	verticesBox.push_back(x - ratioWidth); // BOTTOM LEFT TO BOTTOM RIGHT
+	verticesBox.push_back(y - ratioHeight);
+	verticesBox.push_back(x + ratioWidth);
+	verticesBox.push_back(y - ratioHeight);
 
-	verticesBox.push_back(x + ratio); //BOTTOM RIGHT TO TOP RIGHT
-	verticesBox.push_back(y - ratio);
-	verticesBox.push_back(x + ratio);
-	verticesBox.push_back(y + ratio);
+	verticesBox.push_back(x + ratioWidth); //BOTTOM RIGHT TO TOP RIGHT
+	verticesBox.push_back(y - ratioHeight);
+	verticesBox.push_back(x + ratioWidth);
+	verticesBox.push_back(y + ratioHeight);
 
-	verticesBox.push_back(x + ratio); // TOP RIGHT TO TOP LEFT
-	verticesBox.push_back(y + ratio);
-	verticesBox.push_back(x - ratio);
-	verticesBox.push_back(y + ratio);
+	verticesBox.push_back(x + ratioWidth); // TOP RIGHT TO TOP LEFT
+	verticesBox.push_back(y + ratioHeight);
+	verticesBox.push_back(x - ratioWidth);
+	verticesBox.push_back(y + ratioHeight);
 
-	verticesBox.push_back(x - ratio); // TOP LEFT TO BOTTOM LEFT
-	verticesBox.push_back(y + ratio);
-	verticesBox.push_back(x - ratio);
-	verticesBox.push_back(y - ratio);
+	verticesBox.push_back(x - ratioWidth); // TOP LEFT TO BOTTOM LEFT
+	verticesBox.push_back(y + ratioHeight);
+	verticesBox.push_back(x - ratioWidth);
+	verticesBox.push_back(y - ratioHeight);
 
 	ASSInterface::Ref<ASSInterface::VertexBuffer> vertexBufferBox;
 	vertexBufferBox.reset(ASSInterface::VertexBuffer::Create(&verticesBox[0], (uint32_t)verticesBox.size() * sizeof(float))); //
@@ -295,9 +333,10 @@ void FrameVideo::CreateBuffer()
 		m_Texture = ASSInterface::Texture2D::Create(&dataImage[0], m_Streamer->GetWidth(),
 			m_Streamer->GetHeight(), m_Streamer->GetChannels());
 		ASSInterface::FramebufferSpecification fbSpec;
-		fbSpec.Width = 1280;
-		fbSpec.Height = 960;
+		fbSpec.Width = m_Streamer->GetWidth();
+		fbSpec.Height = m_Streamer->GetHeight();
 		m_Framebuffer = ASSInterface::Framebuffer::Create(fbSpec);
+		m_CameraController.OnResize((float)m_Streamer->GetWidth(), (float)m_Streamer->GetHeight());
 	}
 
 }
@@ -319,8 +358,7 @@ void FrameVideo::StopThread(const std::string& tname) {
 		}
 			
 	}
-			
-	
+					
 }
 
 void FrameVideo::StartThread(const std::string& tname, bool runFlow) {
@@ -335,7 +373,7 @@ void FrameVideo::StartThread(const std::string& tname, bool runFlow) {
 		std::thread thrd = std::thread(&FrameVideo::RunFlow, this);
 		thrd.detach();
 		tm_[tname] = std::move(thrd);
+		
 	}
-
-
+	
 }

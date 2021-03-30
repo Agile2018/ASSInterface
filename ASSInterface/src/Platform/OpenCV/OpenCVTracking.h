@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ASSInterface/Recognition/Tracking.h"
+#include "ASSInterface.h"
 #include <opencv2/imgproc.hpp>  // Gaussian Blur
 #include <opencv2/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
 #include <opencv2/videoio.hpp>
@@ -43,16 +43,18 @@ namespace ASSInterface {
 		~OpenCVTracking();
 		virtual void Init() override;
 		virtual void Detect(std::vector<unsigned char> data) override;
-		virtual float** GetCoordinates() override;
+		virtual float* GetCoordinates() override;
 		virtual float* GetColor() override;
 		virtual const DetectSpecification& Get() const override { return detectSpecification; };
 		virtual inline void SetWidth(int width) override { widthFrame = width; }
 		virtual inline void SetHeight(int height) override { heightFrame = height; }
 		virtual inline const std::vector<unsigned char> GetFlowData() const { return flowData; };
+		
 	private:
 		virtual void CreateTemplate() override;
 		virtual void Crop() override;
 		virtual const CropSpecification& GetCropSpecification() const override { return cropSpecification; };
+		
 	private:
 		CropSpecification cropSpecification;
 		DetectSpecification detectSpecification;

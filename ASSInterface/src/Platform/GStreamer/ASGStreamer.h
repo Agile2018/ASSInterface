@@ -6,7 +6,7 @@
 #include "gst/app/app.h"
 #include <SOIL2.h>
 #include "rxcpp/rx.hpp"
-
+#include "tbb/parallel_invoke.h"
 
 namespace Rx {
 	using namespace rxcpp;
@@ -36,7 +36,8 @@ namespace ASSInterface {
 		virtual float GetSizeHeightTexture() const override { return sizeHeightTexture; };
 		virtual std::vector<unsigned char> GetDataTexture() override;
 		virtual std::vector<unsigned char> GetDataRaw() override;
-
+		virtual inline const std::string GetNameWindow() override { return nameWindow; };
+		virtual float* GetCoordinates() override { return trackingOpenCV->GetCoordinates(); };
 	private:
 		virtual char* DescriptionFlow(int optionFlow, std::string descriptionFlow) override;
 		virtual std::string ConvertBackslashToSlash(std::string input) override;
@@ -45,7 +46,9 @@ namespace ASSInterface {
 		void ObserverFlow();
 		void InitDimensionsImage(std::tuple<int, int, int, int> dimensionsImage);
 		void SetDataImage(unsigned char* data, int size, int channel);
-		
+		void BranchTracking(std::vector<unsigned char> data);
+		void BranchVideo(unsigned char* data, int size);
+		void BranchVideo(std::vector<unsigned char> data);
 	private:
 		ASSInterface::Ref<ASSInterface::Configuration> configuration;		
 		GstElement* pipeline = nullptr;
@@ -62,6 +65,10 @@ namespace ASSInterface {
 		int optionSourceFlow = 0;
 		int indexChannel = 1;
 		bool isInitChannel = false;
-		ASSInterface::Ref<ASSInterface::Tracking> tracking;
+		std::string nameWindow = "Video";
+		ASSInterface::Ref<ASSInterface::Tracking> trackingOpenCV;
+		//ASSInterface::Ref<ASSInterface::Tracking> trackingAzureFace;
+
+		bool isFinishTrack = true;
 	};
 }

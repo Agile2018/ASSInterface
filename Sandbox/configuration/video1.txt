@@ -1,1 +1,1 @@
-{"deviceVideo":"1","fileVideo":"assets/textures/video2.mp4","ipCamera":"rtsp://root:123qwe@192.168.0.12:554/axis-media/media.amp","sourceFlow":1}
+{"deviceVideo":"1","fileVideo":"assets/textures/video2.mp4","ipCamera":"rtsp://root:123qwe@192.168.0.12:554/axis-media/media.amp","label":"Control Entry Flow","sourceFlow":1}

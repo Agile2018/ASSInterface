@@ -5,6 +5,12 @@ bin-int/
 ASSInterface/vendor/boost/
 ASSInterface/vendor/GStreamer/
 ASSInterface/vendor/opencv/
+ASSInterface/vendor/cpprestsdk/
+ASSInterface/vendor/mongo-c-driver/
+ASSInterface/vendor/mongo-cxx-driver/
+ASSInterface/vendor/nlohmann_json/
+ASSInterface/vendor/Rx/
+ASSInterface/vendor/TBB/
 
 # Files
 *.user

@@ -3,8 +3,7 @@
 
 namespace ASSInterface {
 	MongoDBASS::MongoDBASS(const std::string& connection)
-	{				
-		mongocxx::uri uri(connection.c_str()); //"mongodb://localhost:27017"
+	{			
 		class NoopLogger : public mongocxx::logger {
 		public:
 			virtual void operator()(mongocxx::log_level,
@@ -12,16 +11,26 @@ namespace ASSInterface {
 				bsoncxx::stdx::string_view) noexcept {}
 		};
 
-		auto instance =
-			bsoncxx::stdx::make_unique<mongocxx::instance>(bsoncxx::stdx::make_unique<NoopLogger>());
+		try
+		{
+			mongocxx::uri uri(connection.c_str()); //"mongodb://localhost:27017"
+			auto instance =
+				bsoncxx::stdx::make_unique<mongocxx::instance>(bsoncxx::stdx::make_unique<NoopLogger>());
 
-		MongoAccess::instance().Configure(std::move(instance),
-			bsoncxx::stdx::make_unique<mongocxx::pool>(std::move(uri)));
+			MongoAccess::instance().Configure(std::move(instance),
+				bsoncxx::stdx::make_unique<mongocxx::pool>(std::move(uri)));
+		}
+		catch (const mongocxx::exception& e)
+		{
+			ASS_ERROR("Error Mongo Connected: {0}", e.what());			
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::MongoDBASS", e.what());
+		}				
+		
 	}
 
 	MongoDBASS::~MongoDBASS()
 	{
-	}
+	}	
 
 	void MongoDBASS::Add(const EntitySpecification& ent)
 	{
@@ -49,7 +58,7 @@ namespace ASSInterface {
 		catch (const mongocxx::exception& e)
 		{
 			ASS_ERROR("Error Mongo Add: {0}", e.what());
-
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Add", e.what());
 		}
 	}
 
@@ -82,7 +91,7 @@ namespace ASSInterface {
 		catch (const mongocxx::exception& e)
 		{
 			ASS_ERROR("Error Mongo Add: {0}", e.what());
-
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Add", e.what());
 		}
 	}
 
@@ -107,7 +116,7 @@ namespace ASSInterface {
 		catch (const mongocxx::exception& e)
 		{
 			ASS_ERROR("Error Mongo Add: {0}", e.what());
-
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Add", e.what());
 		}
 	}
 
@@ -140,11 +149,14 @@ namespace ASSInterface {
 			catch (const mongocxx::exception& e)
 			{
 				ASS_ERROR("Error Mongo Update: {0}", e.what());
+				ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Update", e.what());
 			}
 		}
 		else
 		{
 			ASS_ERROR("Error collections not created");
+			const char* err = "Error collections not created";
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Update", err);
 		}
 		
 	}
@@ -182,11 +194,14 @@ namespace ASSInterface {
 			catch (const mongocxx::exception& e)
 			{
 				ASS_ERROR("Error Mongo Update: {0}", e.what());
+				ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Update", e.what());
 			}
 		}
 		else
 		{
 			ASS_ERROR("Error collections not created");
+			const char* err = "Error collections not created";
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Update", err);
 		}
 	}
 
@@ -216,11 +231,14 @@ namespace ASSInterface {
 			catch (const mongocxx::exception& e)
 			{
 				ASS_ERROR("Error Mongo Update: {0}", e.what());
+				ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Update", e.what());
 			}
 		}
 		else
 		{
 			ASS_ERROR("Error collections not created");
+			const char* err = "Error collections not created";
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Update", err);
 		}
 	}
 
@@ -251,12 +269,14 @@ namespace ASSInterface {
 			catch (const mongocxx::exception& e)
 			{
 				ASS_ERROR("Error Mongo Update: {0}", e.what());
-
+				ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Delete", e.what());
 			}
 		}
 		else
 		{
 			ASS_ERROR("Error collections not created");
+			const char* err = "Error collections not created";
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Delete", err);
 		}
 	}
 
@@ -286,12 +306,14 @@ namespace ASSInterface {
 			catch (const mongocxx::exception& e)
 			{
 				ASS_ERROR("Error Mongo Update: {0}", e.what());
-
+				ASS_ERROR_PROFILE_SCOPE("MongoDBASS::DeleteImages", e.what());
 			}
 		}
 		else
 		{
 			ASS_ERROR("Error collections not created");
+			const char* err = "Error collections not created";
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::DeleteImages", err);
 		}
 	}
 
@@ -321,12 +343,14 @@ namespace ASSInterface {
 			catch (const mongocxx::exception& e)
 			{
 				ASS_ERROR("Error Mongo Update: {0}", e.what());
-
+				ASS_ERROR_PROFILE_SCOPE("MongoDBASS::DeleteEvent", e.what());
 			}
 		}
 		else
 		{
 			ASS_ERROR("Error collections not created");
+			const char* err = "Error collections not created";
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::DeleteEvent", err);
 		}
 	}
 
@@ -368,11 +392,14 @@ namespace ASSInterface {
 			catch (const mongocxx::exception& e)
 			{
 				ASS_ERROR("Error Mongo Get Entity: {0}", e.what());
+				ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Get", e.what());
 			}
 		}
 		else
 		{
 			ASS_ERROR("Error collections not created");
+			const char* err = "Error collections not created";
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Get", err);
 		}
 		
 	}
@@ -417,11 +444,14 @@ namespace ASSInterface {
 			catch (const mongocxx::exception& e)
 			{
 				ASS_ERROR("Error Mongo Get Entity Images: {0}", e.what());
+				ASS_ERROR_PROFILE_SCOPE("MongoDBASS::GetImages", e.what());
 			}
 		}
 		else
 		{
 			ASS_ERROR("Error collections not created");
+			const char* err = "Error collections not created";
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::GetImages", err);
 		}
 	}
 
@@ -430,7 +460,7 @@ namespace ASSInterface {
 		auto clientConnection = MongoAccess::instance().GetConnection();
 
 		mongocxx::database database = (*clientConnection)[nameDatabase.c_str()];
-
+		
 		auto cursorCheck = database.list_collections();
 
 		if (cursorCheck.begin() != cursorCheck.end()) {
@@ -458,11 +488,31 @@ namespace ASSInterface {
 			catch (const mongocxx::exception& e)
 			{
 				ASS_ERROR("Error Mongo Get Entity Events: {0}", e.what());
+				ASS_ERROR_PROFILE_SCOPE("MongoDBASS::GetEvents", e.what());
 			}
 		}
 		else
 		{
 			ASS_ERROR("Error collections not created");
+			const char* err = "Error collections not created";
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::GetEvents", err);
+		}
+	}
+
+	void MongoDBASS::Drop()
+	{
+		auto clientConnection = MongoAccess::instance().GetConnection();
+
+		mongocxx::database database = (*clientConnection)[nameDatabase.c_str()];
+
+		try
+		{
+			database.drop();
+		}
+		catch (const mongocxx::exception& e)
+		{
+			ASS_ERROR("Error Mongo Drop Database: {0}", e.what());
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Drop", e.what());
 		}
 	}
 

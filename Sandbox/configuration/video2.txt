@@ -1,1 +1,1 @@
-{"deviceVideo":"1","fileVideo":"assets/textures/video2.mp4","ipCamera":"rtsp://root:123qwe@192.168.0.12:554/axis-media/media.amp","sourceFlow":2}
+{"deviceVideo":"1","fileVideo":"assets/textures/video2.mp4","ipCamera":"rtsp://root:123qwe@192.168.0.12:554/axis-media/media.amp","label":"Video Intel Sense","sourceFlow":3}

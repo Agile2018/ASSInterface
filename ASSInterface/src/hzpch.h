@@ -8,6 +8,8 @@
 #include <functional>
 #include <thread>
 #include <string>
+#include <chrono>
+#include <random>
 #include <iomanip>
 #include <stdint.h>
 #include <stdexcept>
@@ -19,7 +21,7 @@
 #include <unordered_set>
 #include "ASSInterface/Core/Log.h"
 #include "ASSInterface/Debug/Instrumentor.h"
-
+#include "ASSInterface/Debug/ErrorInstrumentor.h"
 #ifdef ASS_PLATFORM_WINDOWS
 	#include <Windows.h>
 #endif // ASS_PLATFORM_WINDOWS

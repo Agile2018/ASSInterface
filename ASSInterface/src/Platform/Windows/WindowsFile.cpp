@@ -28,13 +28,19 @@ namespace ASSInterface {
 			else
 			{
 				
-				ASS_CORE_ERROR("Could not read from file '{0}'", fileName);
+				ASS_CORE_ERROR("Could not read from file '{0}'", fileName);		
+				std::string str = "Could not read from file " + fileName;
+				const char* err = str.c_str();
+				ASS_ERROR_PROFILE_SCOPE("WindowsFile::ReadFile", err);
 			}
 
 		}
 		else
 		{
 			ASS_CORE_ERROR("Could not open file '{0}'", fileName);
+			std::string str = "Could not read from file " + fileName;
+			const char* err = str.c_str();
+			ASS_ERROR_PROFILE_SCOPE("WindowsFile::ReadFile", err);
 		}
 
 		return result;

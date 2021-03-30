@@ -51,7 +51,7 @@ private:
 	ASSInterface::Ref<ASSInterface::IndexBuffer> indexBufferBox;
 	std::vector<float> verticesBox;
 	std::vector<uint32_t> indicesBox;
-	float x = 0.0f, y = 0.0f, ratio = 0.15f;
+	float x = 0.0f, y = 0.0f, ratioWidth = 0.0f, ratioHeight = 0.0f;
 	unsigned short pattern = 0xAAAA; //0x18ff 0xAAAA
 	float factor = 4.0f, elapse = 0.0f;
 	std::string nameWindow = "Video 1";

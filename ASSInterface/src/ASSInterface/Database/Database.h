@@ -36,10 +36,11 @@ namespace ASSInterface {
 		virtual void SetDatabase(const std::string& database) = 0;
 		virtual void Get(const std::string id) = 0;
 		virtual void GetImages(const std::string id) = 0;
-		virtual void GetEvents(const std::string id) = 0;
+		virtual void GetEvents(const std::string id) = 0;		
 		virtual const EntitySpecification& GetEntitySpecification() const = 0;
 		virtual const EntityImage& GetEntityImage() const = 0;
 		virtual const EntityEvent& GetEntityEvent() const = 0;
+		virtual void Drop() = 0;
 		static Ref<Database> Create(const std::string& connection);
 	};
 }

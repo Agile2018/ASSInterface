@@ -13,6 +13,7 @@ namespace ASSInterface {
 		virtual void ParseToFile() override;		
 		virtual std::any GetParam(const char* name) override;
 		virtual void SetParam(const char* name, std::any value) override;
+		virtual void SetPath(std::string nameFile) override;
 	private:		
 		virtual void SaveFile(std::string content) override;
 	private:				
@@ -21,7 +22,7 @@ namespace ASSInterface {
 		const std::string NAME_DATABASE = "name";
 		const std::string CONNECT_STRING = "connect";
 		std::string nameDatabase = "dbFace";
-		std::string connectString = "mongodb://192.168.0.9:27017/?minPoolSize=3&maxPoolSize=3";
+		std::string connectString = "mongodb://localhost:27017/?minPoolSize=3&maxPoolSize=3";
 		mutable std::unordered_map<std::string, std::any> paramsDatabase;
 		ASSInterface::Ref<ASSInterface::File> managerFile;
 		

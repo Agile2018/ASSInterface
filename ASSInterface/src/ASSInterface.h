@@ -46,3 +46,9 @@
 #include "ASSInterface/Configuration/Configuration.h"
 #include "ASSInterface/Utils/File.h"
 
+//Language
+#include "ASSInterface/Core/IndexLabel.h"
+#include "ASSInterface/Core/Label.h"
+
+//Trace error
+//#include <ASSInterface/Debug/ErrorInstrumentor.h>
