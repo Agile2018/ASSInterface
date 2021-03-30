@@ -21,6 +21,8 @@ IncludeDir["SOIL2"] = "ASSInterface/vendor/SOIL2/src/SOIL2"
 IncludeDir["boost"] = "ASSInterface/vendor/boost"
 IncludeDir["opencv"] = "ASSInterface/vendor/opencv/include"
 IncludeDir["nlohmann_json"] = "ASSInterface/vendor/nlohmann_json/include"
+IncludeDir["TBB"] = "ASSInterface/vendor/TBB/include"
+IncludeDir["cpprestsdk"] = "ASSInterface/vendor/cpprestsdk/include"
 
 group "Dependencies"
 	include "ASSInterface/vendor/GLFW"
@@ -56,7 +58,12 @@ project "ASSInterface"
 		"%{prj.name}/vendor/mongo-cxx-driver/install/include/mongocxx/v_noabi/mongocxx/**.hpp",
 		"%{prj.name}/vendor/opencv/include/opencv2/**.h",
 		"%{prj.name}/vendor/opencv/include/opencv2/**.hpp",
-		"%{prj.name}/vendor/nlohmann_json/include/nlohmann/**.hpp"
+		"%{prj.name}/vendor/nlohmann_json/include/nlohmann/**.hpp",
+		"%{prj.name}/vendor/TBB/include/tbb/**.h",
+		"%{prj.name}/vendor/TBB/include/oneapi/**.h",
+		"%{prj.name}/vendor/TBB/include/oneapi/tbb/**.h",
+		"%{prj.name}/vendor/cpprestsdk/include/cpprest/**.h",
+		"%{prj.name}/vendor/cpprestsdk/include/pplx/**.h"
 	}
 
 	defines
@@ -78,6 +85,8 @@ project "ASSInterface"
 		"%{IncludeDir.Rx}",
 		"%{IncludeDir.boost}",
 		"%{IncludeDir.nlohmann_json}",
+		"%{IncludeDir.TBB}",
+		"%{IncludeDir.cpprestsdk}",
 		"%{prj.name}/vendor/GStreamer/include",
 		"%{prj.name}/vendor/GStreamer/include/glib-2.0",
 		"%{prj.name}/vendor/GStreamer/include/gstreamer-1.0",
@@ -90,7 +99,9 @@ project "ASSInterface"
 
 	libdirs 
 	{ 
-		"ASSInterface/vendor/opencv/x64/vc16/lib" 
+		"ASSInterface/vendor/opencv/x64/vc16/lib",
+		"ASSInterface/vendor/TBB/lib",
+		"ASSInterface/vendor/cpprestsdk/lib"
 	}
 
 	links
@@ -105,7 +116,7 @@ project "ASSInterface"
 		"ASSInterface/vendor/GStreamer/lib/gstreamer-1.0.lib",
 		"ASSInterface/vendor/GStreamer/lib/gstapp-1.0.lib",
 		"ASSInterface/vendor/mongo-cxx-driver/install/lib/bsoncxx.lib",
-		"ASSInterface/vendor/mongo-cxx-driver/install/lib/mongocxx.lib"
+		"ASSInterface/vendor/mongo-cxx-driver/install/lib/mongocxx.lib"		
 	}
 
 	filter "system:windows"				
@@ -123,15 +134,33 @@ project "ASSInterface"
 		runtime "Debug"
 		symbols "on"
 
+		links
+		{			
+			"ASSInterface/vendor/cpprestsdk/lib/cpprest142_2_10d.lib",
+			"ASSInterface/vendor/TBB/lib/tbb12_debug.lib"
+		}
+
 	filter "configurations:Release"
 		defines "ASS_RELEASE"
 		runtime "Release"
 		optimize "on"
 
+		links
+		{			
+			"ASSInterface/vendor/cpprestsdk/lib/cpprest142_2_10.lib",
+			"ASSInterface/vendor/TBB/lib/tbb12.lib"
+		}
+
 	filter "configurations:Dist"
 		defines "ASS_DIST"
 		runtime "Release"
 		optimize "on"
+
+		links
+		{			
+			"ASSInterface/vendor/cpprestsdk/lib/cpprest142_2_10.lib",
+			"ASSInterface/vendor/TBB/lib/tbb12.lib"
+		}
 
 project "Sandbox"
 	location "Sandbox"
@@ -163,8 +192,10 @@ project "Sandbox"
 		"%{IncludeDir.SOIL2}",
 		"%{IncludeDir.Rx}",
 		"%{IncludeDir.JSONCPP}",
+		"%{IncludeDir.TBB}",
+		"%{IncludeDir.cpprestsdk}",
 		"ASSInterface/vendor/opencv/include"
-	}
+	}	
 
 	links
 	{
@@ -181,7 +212,10 @@ project "Sandbox"
 
 		links
 		{
-			"ASSInterface/vendor/opencv/x64/vc16/lib/opencv_world451d.lib"
+			"ASSInterface/vendor/opencv/x64/vc16/lib/opencv_world451d.lib",
+			"ASSInterface/vendor/TBB/lib/tbb_debug.lib",
+			"ASSInterface/vendor/TBB/lib/tbb12_debug.lib",
+			"ASSInterface/vendor/cpprestsdk/lib/cpprest142_2_10d.lib"
 		}
 
 	filter "configurations:Release"
@@ -191,7 +225,10 @@ project "Sandbox"
 
 		links
 		{
-			"ASSInterface/vendor/opencv/x64/vc16/lib/opencv_world451.lib"
+			"ASSInterface/vendor/opencv/x64/vc16/lib/opencv_world451.lib",
+			"ASSInterface/vendor/TBB/lib/tbb.lib",
+			"ASSInterface/vendor/TBB/lib/tbb12.lib",
+			"ASSInterface/vendor/cpprestsdk/lib/cpprest142_2_10.lib"
 		}
 
 	filter "configurations:Dist"
@@ -201,5 +238,8 @@ project "Sandbox"
 
 		links
 		{
-			"ASSInterface/vendor/opencv/x64/vc16/lib/opencv_world451.lib"
+			"ASSInterface/vendor/opencv/x64/vc16/lib/opencv_world451.lib",
+			"ASSInterface/vendor/TBB/lib/tbb.lib",
+			"ASSInterface/vendor/TBB/lib/tbb12.lib",
+			"ASSInterface/vendor/cpprestsdk/lib/cpprest142_2_10d.lib"
 		}
