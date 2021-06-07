@@ -17,8 +17,8 @@ namespace ASSInterface {
 	private:
 		std::string path;
 		std::string fileConfig = "face.txt";
-		float minFaceSize = 25.0;
-		float maxFaceSize = 200.0;
+		float minFaceSize = 18.0;
+		float maxFaceSize = 400.0;
 		int maxfacesDetect = 1;
 		int confidenceThreshold = 600;
 		int qualityModel = 60;

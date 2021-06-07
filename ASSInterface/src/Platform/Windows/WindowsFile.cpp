@@ -69,4 +69,9 @@ namespace ASSInterface {
 	{
 		int result = _mkdir((char*)&nameFolder);
 	}
+	bool WindowsFile::IsFileExists(std::string path)
+	{
+		struct stat buffer;
+		return (stat(path.c_str(), &buffer) == 0);		
+	}
 }

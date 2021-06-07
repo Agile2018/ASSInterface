@@ -1,9 +1,11 @@
-#include "hzpch.h"
 #include "FrameControlEntry.h"
 #include "imgui/imgui.h"
+#include <SOIL2.h>
 
-FrameControlEntry::FrameControlEntry()
+FrameControlEntry::FrameControlEntry(ASSInterface::LanguageType language)
 {
+	lg = language;
+	txtButtom = ASSInterface::Texture2D::Create("assets/textures/cctv.png");
 }
 
 FrameControlEntry::~FrameControlEntry()
@@ -14,7 +16,7 @@ void FrameControlEntry::Show(bool* p_open, PersonSpecification& personSpec)
 {
 	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
 
-	if (!ImGui::Begin("Control Entry", p_open))
+	if (!ImGui::Begin("Entry Control", p_open))
 	{
 		ImGui::End();
 		return;
@@ -22,16 +24,14 @@ void FrameControlEntry::Show(bool* p_open, PersonSpecification& personSpec)
 
 	ShowScreenHead();
 
-	//ShowLastAction();
-
-	//ShowUnidentified(menuEnroll, indexUnidentified);
-
 	if (indexRemove != -1) {		
 		RemovePersonDetected(indexRemove);
 		indexRemove = -1;
 	}
 
-	for (int i = 0; i < listDetected.size(); i++)
+	SetNewsDetected();
+
+	for (int i = 0; i < listShowDetected.size(); i++)
 	{
 		ShowDetected(i, personSpec);
 	}
@@ -41,221 +41,207 @@ void FrameControlEntry::Show(bool* p_open, PersonSpecification& personSpec)
 
 void FrameControlEntry::ShowScreenHead()
 {
-	std::string dateDetect = ASSInterface::DateTime::Now();
-	const char* items[] = { "Video 1", "Video 2" };
-	static const char* current_item = NULL;
+	static bool popup_open = false;	
 
-	ImGui::BeginGroup();
-	ImGui::Text("Choose channel:"); ImGui::SameLine();
-	ImGui::PushItemWidth(100);
-	if (ImGui::BeginCombo("##videocontrolentry", current_item))
-	{
-		for (int n = 0; n < IM_ARRAYSIZE(items); n++)
-		{
-			bool is_selected = (current_item == items[n]);
-			if (ImGui::Selectable(items[n], is_selected)) {
-				current_item = items[n];
-				ImGui::SetItemDefaultFocus();
-				if (!*viewVideo[n])
-				{					
-					*viewVideo[n] = true;
-				}
-				
-			}
+	ImTextureID id = (ImTextureID)txtButtom->GetRendererID();
 
-		}
-		ImGui::EndCombo();
+	ImGui::SetCursorPos(ImVec2(10.0f, 30.0f));
+	ImGui::Text(ASSInterface::Label::GetLabel(LBL_REGISTERED, lg).c_str()); ImGui::SameLine();
+	ImGui::SetCursorPos(ImVec2(90.0f, 30.0f));
+	ImGui::Text(ASSInterface::Label::GetLabel(LBL_CAPTURED, lg).c_str()); ImGui::SameLine();
+	ImGui::SetCursorPos(ImVec2(220.0f, 30.0f));
+	ImGui::Text(ASSInterface::Label::GetLabel(LBL_DATA, lg).c_str()); ImGui::SameLine();
+
+	ImGui::SetCursorPos(ImVec2(300.0f, 25.0f));
+	if (ImGui::ImageButton(id, ImVec2(24, 24))) {
+		popup_open = true;
+		ImGui::SetNextWindowPos(ImGui::GetMousePos());
 	}
-	ImGui::SameLine();
-	ImGui::Text("Operator:"); ImGui::SameLine();
-	ImGui::Text(&nameOperator[0]); ImGui::SameLine();
-	ImGui::Text("Date:"); ImGui::SameLine();
-	ImGui::Text(&dateDetect[0]);
-	ImGui::EndGroup();
-	ImGui::Separator();
-	ImGui::Spacing();
-
-}
-
-void FrameControlEntry::ShowLastAction()
-{
-	ImGui::BeginGroup();
-	ImGui::Text("Last action: Authorize Entry");
-	ImGui::Spacing();
-	ImGui::EndGroup();
-
-	ImGui::Image((void*)personSpecificationLastAction.txtGallery->GetRendererID(), ImVec2{ 100.0f, 125.0f });
-	ImGui::SameLine();
-	ImGui::Image((void*)personSpecificationLastAction.txtCapture->GetRendererID(), ImVec2{ 100.0f, 125.0f });
-
-	ImGui::SameLine();
-	ImGui::BeginGroup();
-	ImGui::Text("Name:"); ImGui::SameLine();
-	ImGui::PushItemWidth(150);
-	ImGui::InputText("##name", personSpecificationLastAction.name, IM_ARRAYSIZE(personSpecificationLastAction.name));
-	ImGui::Text("C.I.:"); ImGui::SameLine();
-	ImGui::PushItemWidth(100);
-	ImGui::InputText("##document", personSpecificationLastAction.document, IM_ARRAYSIZE(personSpecificationLastAction.document));
-	ImGui::Text("Date:"); ImGui::SameLine();
-	ImGui::PushItemWidth(150);
-	ImGui::InputText("##date", personSpecificationLastAction.date, IM_ARRAYSIZE(personSpecificationLastAction.date));
-	ImGui::Text("Type Person:"); ImGui::SameLine();
-	ImGui::PushItemWidth(120);
-	ImGui::InputText("##type", personSpecificationLastAction.type, IM_ARRAYSIZE(personSpecificationLastAction.type),
-		ImGuiInputTextFlags_AllowTabInput | (typePersonReadOnly ? ImGuiInputTextFlags_ReadOnly : 0));
-	ImGui::EndGroup();
-	ImGui::SameLine();
-	ImGui::BeginGroup();
-	ImGui::Text("Place:"); ImGui::SameLine();
-	ImGui::PushItemWidth(50);
-	ImGui::InputText("##place", personSpecificationLastAction.place, IM_ARRAYSIZE(personSpecificationLastAction.place),
-		ImGuiInputTextFlags_ReadOnly);
-	ImGui::Text("Match:"); ImGui::SameLine();
-	ImGui::PushItemWidth(50);
-	ImGui::InputText("##match", personSpecificationLastAction.match, IM_ARRAYSIZE(personSpecificationLastAction.match),
-		ImGuiInputTextFlags_ReadOnly);
-	ImGui::Text("Channel:"); ImGui::SameLine();
-	ImGui::PushItemWidth(50);
-	ImGui::InputText("##channel", personSpecificationLastAction.channel, IM_ARRAYSIZE(personSpecificationLastAction.channel),
-		ImGuiInputTextFlags_ReadOnly);
-	ImGui::Text("State:"); ImGui::SameLine();
-	ImGui::PushItemWidth(100);
-	ImGui::InputText("##state", personSpecificationLastAction.state, IM_ARRAYSIZE(personSpecificationLastAction.state),
-		ImGuiInputTextFlags_ReadOnly);
-	ImGui::EndGroup();
-	ImGui::Separator();
-	ImGui::Spacing();
-}
-
-void FrameControlEntry::ShowUnidentified(bool* menuEnroll, int& indexUnidentified)
-{	
-	static int hue = 140;
-	static float col_area_sat = 124.f / 255.f;
-	static float col_area_val = 100.f / 255.f;
-	ImVec4 col_area = ImColor::HSV(hue / 255.f, col_area_sat, col_area_val);
-
-	ImGui::BeginChild("Not found", ImVec2(0, 180), true, ImGuiWindowFlags_HorizontalScrollbar);
-	ImFont* font_current = ImGui::GetFont();
-
-	for (int line = 0; line < listUnidentified.size(); line++)
+	if (popup_open)
 	{
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::Begin("##Popup", &popup_open, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
 
-		uint32_t textureID = listUnidentified[line].txtCapture->GetRendererID();
-		ImGui::BeginGroup();
-		ImGui::Text("Not found");
-		ImGui::Spacing();
-		ImGui::Image((void*)textureID, ImVec2{ 60.0f, 75.0f });
-		ImGui::SetWindowFontScale(0.8f);
-		ImGui::PushFont(font_current);
-		ImGui::Text(listUnidentified[line].date); 
-		ImGui::PopFont();
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(col_area.x, col_area.y, col_area.z, 0.10f)); 
-		ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
-		std::string nameButton = "ENROLL-" + std::to_string(line);
+		if (!ImGui::IsWindowFocused())
+			popup_open = false;
 
-		if (ImGui::Button(nameButton.c_str())) {
-			if (*menuEnroll == false)
+		for (int i = 0; i < IM_ARRAYSIZE(ConstantApplication::QUANTITY_CHANNELS); i++) {
+
+			bool is_selected = (currentChannel == ConstantApplication::QUANTITY_CHANNELS[i]);
+
+			if (ImGui::Selectable(ConstantApplication::QUANTITY_CHANNELS[i], is_selected))
 			{
-				*menuEnroll = true;
-				indexUnidentified = GetIndexDetected(nameButton);
+				currentChannel = ConstantApplication::QUANTITY_CHANNELS[i];
+				ImGui::SetItemDefaultFocus();
+				if (!*viewVideo[i])
+				{
+					*viewVideo[i] = true;					
+					shootChannel.on_next(i);
+				}
+				popup_open = false;
 			}
 			
 		}
-		ImGui::PopStyleVar(1);
-		ImGui::PopStyleColor(1);
-		ImGui::EndGroup();
-		if (line + 1 != listUnidentified.size())
-		{
-			ImGui::SameLine();
-		}
 
+		ImGui::End();
+		ImGui::PopStyleVar();
+		
 	}
 
-	ImGui::EndChild();
+	ImGui::Separator();
+	ImGui::Spacing();
+
 }
 
 void FrameControlEntry::ShowDetected(int index, PersonSpecification& personSpec)
 {	
-	//static const char* current_item = NULL;
+	static const char* current_place = NULL;
 	std::string nameScreen = "Detect-" + std::to_string(index);
-	ImGui::BeginChild(nameScreen.c_str(), ImVec2(0, 120), true);
+	std::string firtsName = &listShowDetected[index].name[0];
+	std::string lastName = &listShowDetected[index].lastname[0];
+	std::string name = firtsName + " " + lastName;
+
+	ImGui::BeginChild(nameScreen.c_str(), ImVec2(0, 150), true);
 	ImFont* font_current = ImGui::GetFont();
 
 	ImGui::SetWindowFontScale(0.8f);
 	ImGui::PushFont(font_current);
 
-	ImGui::Image((void*)listDetected[index].txtGallery->GetRendererID(), ImVec2{ 60.0f, 75.0f });
+	ImGui::Image((void*)listShowDetected[index].txtGallery, ImVec2{ 60.0f, 75.0f });
 	ImGui::SameLine();
-	ImGui::Image((void*)listDetected[index].txtCapture->GetRendererID(), ImVec2{ 60.0f, 75.0f });
+	ImGui::Image((void*)listShowDetected[index].txtCapture, ImVec2{ 60.0f, 75.0f });
+	ImGui::SameLine();
 
-	ImGui::SameLine();
 	ImGui::BeginGroup();
-	ImGui::Text("Name:"); ImGui::SameLine();
+	ImGui::Text(ASSInterface::Label::GetLabel(LBL_NAME, lg).c_str()); ImGui::SameLine();
 	ImGui::PushItemWidth(150);
-	ImGui::InputText("##name", listDetected[index].name, IM_ARRAYSIZE(listDetected[index].name));
+	ImGui::Text(name.c_str());
+	
 	ImGui::Text("C.I.:"); ImGui::SameLine();
 	ImGui::PushItemWidth(100);
-	ImGui::InputText("##document", listDetected[index].document, IM_ARRAYSIZE(listDetected[index].document));
-	ImGui::Text("Date:"); ImGui::SameLine();
+	ImGui::Text(listShowDetected[index].document);
+	
+	ImGui::Text(ASSInterface::Label::GetLabel(LBL_CHANNEL, lg).c_str()); ImGui::SameLine();
+	ImGui::PushItemWidth(200);
+	ImGui::Text(listShowDetected[index].channel);
+
+	ImGui::Text(ASSInterface::Label::GetLabel(LBL_MATCH, lg).c_str()); ImGui::SameLine();
+	ImGui::PushItemWidth(50);
+	ImGui::Text(listShowDetected[index].match);
+
+	ImGui::Text(ASSInterface::Label::GetLabel(LBL_DATE, lg).c_str()); ImGui::SameLine();
 	ImGui::PushItemWidth(100);
-	ImGui::InputText("##date", listDetected[index].date, IM_ARRAYSIZE(listDetected[index].date));
-	ImGui::Text("Type Person:"); ImGui::SameLine();
+	ImGui::Text(listShowDetected[index].date);
+
+	/*ImGui::Text("Gallery:"); ImGui::SameLine();
 	ImGui::PushItemWidth(120);
-	ImGui::InputText("##type", listDetected[index].type, IM_ARRAYSIZE(listDetected[index].type),
-		ImGuiInputTextFlags_AllowTabInput | (typePersonReadOnly ? ImGuiInputTextFlags_ReadOnly : 0));
+	ImGui::InputText("##gallery", listShowDetected[index].type, IM_ARRAYSIZE(listShowDetected[index].type),
+		ImGuiInputTextFlags_AllowTabInput | (typePersonReadOnly ? ImGuiInputTextFlags_ReadOnly : 0));*/
+	ImGui::Text(ASSInterface::Label::GetLabel(LBL_GALLERY, lg).c_str()); ImGui::SameLine();
+	ImGui::PushItemWidth(120);
+	ImGui::Text(listShowDetected[index].type);
+
 	ImGui::EndGroup();
-	ImGui::SameLine();
+
 	ImGui::BeginGroup();
-	ImGui::Text("Place:"); ImGui::SameLine();
-	ImGui::PushItemWidth(50);
-	ImGui::InputText("##place", listDetected[index].place, IM_ARRAYSIZE(listDetected[index].place),
-		ImGuiInputTextFlags_ReadOnly);
-	ImGui::Text("Match:"); ImGui::SameLine();
-	ImGui::PushItemWidth(50);
-	ImGui::InputText("##match", listDetected[index].match, IM_ARRAYSIZE(listDetected[index].match),
-		ImGuiInputTextFlags_ReadOnly);
-	ImGui::Text("Channel:"); ImGui::SameLine();
-	ImGui::PushItemWidth(50);
-	ImGui::InputText("##channel", listDetected[index].channel, IM_ARRAYSIZE(listDetected[index].channel),
-		ImGuiInputTextFlags_ReadOnly);
-	ImGui::Text("State:"); ImGui::SameLine();
-	ImGui::PushItemWidth(100);
-	ImGui::InputText("##state", listDetected[index].state, IM_ARRAYSIZE(listDetected[index].state),
-		ImGuiInputTextFlags_ReadOnly);
-	ImGui::EndGroup();
-	ImGui::SameLine();
-	ImGui::BeginGroup();
-	ImGui::Text("Place:"); ImGui::SameLine();
-	if (ImGui::BeginCombo("##combo", listDetected[index].place)) {
-		for (int n = 0; n < IM_ARRAYSIZE(itemsTarget); n++) {
-			bool is_selected = (listDetected[index].place == itemsTarget[n]);
-			if (ImGui::Selectable(itemsTarget[n], is_selected)) {
-				strcpy(listDetected[index].place, itemsTarget[n]);				 
+
+	ImGui::Text(std::to_string(index + 1).c_str()); ImGui::SameLine();
+	ImGui::PushItemWidth(200);
+	if (ImGui::BeginCombo("##combo", listShowDetected[index].place)) {
+		for (int n = 0; n < IM_ARRAYSIZE(ConstantApplication::DESTINATION_PLACES); n++) {
+			bool is_selected = (current_place == ConstantApplication::DESTINATION_PLACES[n]);
+			if (ImGui::Selectable(ConstantApplication::DESTINATION_PLACES[n], is_selected)) {
+				current_place = ConstantApplication::DESTINATION_PLACES[n];
+				strcpy(listShowDetected[index].place, current_place);
 				ImGui::SetItemDefaultFocus();
 			}
 		}
 		ImGui::EndCombo();
 	}
-	if (ImGui::Button("Authorize entry")) {
+	ImGui::SameLine();
+
+	ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
+	if (ImGui::Button("Authorize", ImVec2(100.0f, 20.0f))) {
 		indexRemove = GetIndexDetected(nameScreen);
 		SetPersonInside(indexRemove, personSpec);
 	}
-	ImGui::Button("Authorize departure");
+	ImGui::PopStyleVar(1);
 	ImGui::EndGroup();
+
 	ImGui::PopFont();
 
 	ImGui::EndChild();
 }
 
 void FrameControlEntry::SetPersonInside(int index, PersonSpecification& personSpec) {
-	std::string dateDetect = ASSInterface::DateTime::Now();
-	strcpy(personSpec.id, listDetected[index].id);
-	strcpy(personSpec.name, listDetected[index].name);
-	strcpy(personSpec.document, listDetected[index].document);
-	strcpy(personSpec.id, listDetected[index].id);
-	strcpy(personSpec.date, dateDetect.c_str());
-	strcpy(personSpec.type, listDetected[index].type);
-	personSpec.txtCapture = listDetected[index].txtCapture;
+
+	std::string currentPlace = &listShowDetected[index].place[0];
+
+	if (!currentPlace.empty())
+	{
+		std::string dateDetect = ASSInterface::DateTime::Now();
+		strcpy(personSpec.id, listShowDetected[index].id);
+		strcpy(personSpec.name, listShowDetected[index].name);
+		strcpy(personSpec.document, listShowDetected[index].document);
+		strcpy(personSpec.date, dateDetect.c_str());
+		strcpy(personSpec.type, listShowDetected[index].type);
+		strcpy(personSpec.place, listShowDetected[index].place);
+		strcpy(personSpec.match, listShowDetected[index].match);
+		strcpy(personSpec.channel, listShowDetected[index].channel);
+
+		personSpec.txtCapture = listShowDetected[index].txtCapture;
+		personSpec.txtGallery = listShowDetected[index].txtGallery;
+
+		ASSInterface::EntityEvent entEvent;
+		entEvent.id = &personSpec.id[0];
+		entEvent.date = ASSInterface::DateTime::NowToLong();
+		entEvent.type = ASSInterface::EventAppType::inside;
+		entEvent.description = &personSpec.place[0];
+
+		dbMongo->Add(entEvent);
+	}
+}
+
+void FrameControlEntry::SetNewsDetected()
+{
+	bool flagExist = true;
+	std::lock_guard lock(mutexList);
+	for (int i = 0; i < listDetectedTemp.size(); i++)
+	{
+		for (int j = 0; j < listDetected.size(); j++)
+		{
+			std::string idDetect = &listDetected[j].id[0];
+			std::string idTemp = &listDetectedTemp[i].id[0];
+			int idIntDet = atoi(idDetect.c_str());
+			int idIntTemp = atoi(idTemp.c_str());
+			if (idIntDet == idIntTemp)
+			{
+				flagExist = false;
+			}
+		}
+
+		if (flagExist)
+		{
+			listDetectedTemp[i].txtCapture = SOIL_load_OGL_texture_from_memory(
+				&listDetectedTemp[i].bufferCapture[0],
+				(int)listDetectedTemp[i].bufferCapture.size(),
+				SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+			listDetectedTemp[i].txtGallery = SOIL_load_OGL_texture_from_memory(
+				&listDetectedTemp[i].bufferGallery[0],
+				(int)listDetectedTemp[i].bufferGallery.size(),
+				SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+
+			if (listDetectedTemp[i].txtCapture != 0 && listDetectedTemp[i].txtGallery != 0)
+			{
+				listDetected.push_back(listDetectedTemp.at(i));
+				listShowDetected.push_back(listDetectedTemp.at(i));
+			}
+
+		}
+
+	}
+
+	listDetectedTemp.clear();
 }
 
 int FrameControlEntry::GetIndexDetected(std::string nameControl) {

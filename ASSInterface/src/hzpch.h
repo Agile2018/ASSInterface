@@ -16,6 +16,7 @@
 #include <sstream>
 #include <array>
 #include <vector>
+#include <queue>
 #include <any>
 #include <unordered_map>
 #include <unordered_set>
@@ -25,3 +26,12 @@
 #ifdef ASS_PLATFORM_WINDOWS
 	#include <Windows.h>
 #endif // ASS_PLATFORM_WINDOWS
+#include "rxcpp/rx.hpp"
+
+namespace Rx {
+	using namespace rxcpp;
+	using namespace rxcpp::subjects;
+	using namespace rxcpp::operators;
+	using namespace rxcpp::util;
+
+}

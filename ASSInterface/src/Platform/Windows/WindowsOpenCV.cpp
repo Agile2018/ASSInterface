@@ -6,6 +6,8 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
+//#include <opencv2/core/parallel/backend/parallel_for.tbb.hpp>
+
 namespace ASSInterface {
 	WindowsOpenCV::WindowsOpenCV()
 	{
@@ -13,13 +15,58 @@ namespace ASSInterface {
 	WindowsOpenCV::~WindowsOpenCV()
 	{
 	}
-	std::vector<unsigned char> WindowsOpenCV::ImenCode(std::vector<unsigned char> flowBytes, int rows, int cols) {
+	std::vector<unsigned char> WindowsOpenCV::ImenCode(std::vector<unsigned char> flowBytes, 
+		int rows, int cols) {
 		std::vector<uchar> bufferImage;		
 
-		cv::Mat srcMat = cv::imdecode(flowBytes, cv::IMREAD_COLOR);
+		try
+		{
+			/*unsigned char* copyFlow = new unsigned char[flowBytes.size()];
+			memcpy(copyFlow, &flowBytes[0], flowBytes.size());*/
+
+			cv::Mat img = cv::Mat(rows, cols, CV_8UC3);
+			img.data = &flowBytes[0]; //
+
+			//int cnn = (int)flowBytes.size() / (rows * cols);
+			
+			//cv::Mat img = cv::imdecode(flowBytes, cv::IMREAD_COLOR);
+
+			//if (cnn == 3)
+			//{
+				int params[3] = { 0 };
+				params[0] = cv::IMWRITE_JPEG_QUALITY;
+				params[1] = 100;
+
+				/*std::vector<int> compression_params;
+				compression_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
+				compression_params.push_back(9);*/
+
+				if (!img.empty()) {
+					bool code = cv::imencode(".jpg", img,
+						bufferImage, std::vector<int>(params, params + 2));
+					if (!code)
+					{
+						bufferImage.clear();
+					}
+				}
+			//}						
+		}
+		catch (cv::Exception& ex)
+		{
+			ASS_ERROR("ERROR IMENCODE: {0}", ex.what());
+		}
 		
+		return bufferImage;
+	}
+
+	std::vector<unsigned char> WindowsOpenCV::ImDecode(std::vector<unsigned char> flowBytes)
+	{
+		std::vector<uchar> bufferImage;
+
+		cv::Mat srcMat = cv::imdecode(flowBytes, cv::IMREAD_COLOR);
+
 		int params[3] = { 0 };
-		params[0] = cv::IMWRITE_JPEG_QUALITY;
+		params[0] = cv::IMWRITE_JPEG_QUALITY; //cv::IMWRITE_PNG_COMPRESSION;
 		params[1] = 100;
 
 		bool code = cv::imencode(".jpg", srcMat,
@@ -28,18 +75,8 @@ namespace ASSInterface {
 		return bufferImage;
 	}
 
-	unsigned char* WindowsOpenCV::ImDecode(std::vector<unsigned char> flowBytes)
-	{
-		cv::Mat srcMat = cv::imdecode(flowBytes, cv::IMREAD_COLOR);
-
-		return srcMat.data;
-	}
-
 	std::vector<unsigned char> WindowsOpenCV::Resize(std::vector<unsigned char> flowBytes, int rows, int cols) {
-		std::vector<uchar> bufferImage;
-		
-		/*unsigned char* copyFlow = new unsigned char[flowBytes.size()];
-		memcpy(copyFlow, &flowBytes[0], flowBytes.size());*/
+		std::vector<uchar> bufferImage;				
 
 		int params[3] = { 0 };
 		params[0] = cv::IMWRITE_JPEG_QUALITY;
@@ -49,8 +86,7 @@ namespace ASSInterface {
 		int newWidth = MAX_SIZE_IMAGE;
 		int newHeight = (int)((float)newWidth / relationSize);
 
-		cv::Mat srcMat = cv::imdecode(flowBytes, cv::IMREAD_COLOR);
-		//cv::imwrite("bgr.jpg", img);
+		cv::Mat srcMat = cv::imdecode(flowBytes, cv::IMREAD_COLOR);	
 				
 		cv::Mat newImg;
 
@@ -64,9 +100,13 @@ namespace ASSInterface {
 
 	std::vector<unsigned char> WindowsOpenCV::Resize(const char* fileName, int height, int width) {
 		std::vector<uchar> bufferImage;
-		int params[3] = { 0 };
+		/*int params[3] = { 0 };
 		params[0] = cv::IMWRITE_JPEG_QUALITY;
-		params[1] = 100;
+		params[1] = 100;*/
+
+		std::vector<int> compression_params;
+		compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
+		compression_params.push_back(100);		
 
 		float relationSize = (float)width / (float)height;
 		int newWidth = MAX_SIZE_IMAGE;
@@ -77,9 +117,60 @@ namespace ASSInterface {
 		cv::Mat newImg;
 		cv::resize(img, newImg, cv::Size(newWidth, newHeight));
 
-		bool code = cv::imencode(".jpg", newImg, bufferImage, std::vector<int>(params, params + 2));
+		//int m_width, m_height, m_channels;
+
+		//int sizeImg = newWidth * newHeight * newImg.channels();
+		//unsigned char* dataTemp = SOIL_load_image_from_memory(newImg.data,
+		//	sizeImg, &m_width, &m_height, &m_channels, SOIL_LOAD_RGB);
+
+		//int m_SizeImage = m_width * m_height * m_channels;
+		//bufferImage.assign(dataTemp, dataTemp + m_SizeImage);
+
+		////cv::imwrite("opencv.jpg", newImg);
+		//
+		//
+
+		//return bufferImage;
+		try
+		{
+			bool code = cv::imencode(".jpg", newImg, bufferImage, compression_params);
+			if (code)
+			{
+				cv::imwrite("opencv.jpg", newImg);
+				ASS_INFO("Good");
+			}
+		}
+		catch (cv::Exception& ex)
+		{
+			ASS_ERROR("WindowsOpenCV::WriteImage {0} ", ex.what());
+		}
+		 //std::vector<int>(params, params + 2)
+		/*cv::Mat img1 = cv::Mat(newHeight, newWidth, CV_8UC3);
+		img.data = &bufferImage[0];*/
+		
 
 		return bufferImage;
+	}
+
+	unsigned char* WindowsOpenCV::Resize(unsigned char* dataImage, 
+		int* width, int* height, int* lenght)
+	{
+
+		avir::CImageResizer<> ImageResizer(8);
+
+		float relationSize = (float)*width / (float)*height;
+		int newWidth = MAX_SIZE_IMAGE;
+		int newHeight = (int)((float)newWidth / relationSize);
+
+		*lenght = newWidth * newHeight * 3;
+		unsigned char* flowNewImage = new unsigned char[*lenght];
+
+		ImageResizer.resizeImage(dataImage, *width, *height, 0, 
+			flowNewImage, newWidth, newHeight, 3, 0);
+		*width = newWidth;
+		*height = newHeight;
+
+		return flowNewImage;
 	}
 
 	bool WindowsOpenCV::GetSize(const char* fileName, int* x, int* y) {
@@ -151,5 +242,62 @@ namespace ASSInterface {
 		}
 
 		return false;
+	}
+	
+	std::vector<unsigned char> WindowsOpenCV::WriteImage(std::vector<unsigned char> dataImage, 
+		int rows, int cols)
+	{		
+		unsigned char* buffer = nullptr;
+		std::vector<uchar> bufferImage;
+		std::vector<uchar> bufferResult;
+		try
+		{			
+			cv::Mat img = cv::Mat(rows, cols, CV_8UC3);
+			img.data = &dataImage[0];			
+
+			int cnn = (int)dataImage.size() / (rows * cols);
+			
+			if (cnn == 3 && !img.empty()) {
+
+				/*std::vector<int> compression_params;
+				compression_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
+				compression_params.push_back(9);*/
+
+				std::vector<int> compression_params;
+				compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
+				compression_params.push_back(100);
+
+				/*int params[3] = { 0 };
+				params[0] = cv::IMWRITE_JPEG_QUALITY;
+				params[1] = 100;*/
+
+				bool code = cv::imencode(".jpg", img,
+					bufferImage, compression_params); // std::vector<int>(params, params + 2)
+				if (code)
+				{
+					cv::imwrite("opencv.jpg", img);
+					bufferResult.assign(img.data, img.data + (img.rows * img.cols * 3));
+					
+				}
+				
+			}
+					
+		}
+		catch (cv::Exception& ex)
+		{
+			ASS_ERROR("WindowsOpenCV::WriteImage {0} ", ex.what());
+		}
+		
+		return bufferResult;
+	}
+
+	void WindowsOpenCV::VerifyImage(unsigned char* data, int size, int height, int width)
+	{
+		std::vector<unsigned char> imgData(data, data + size);
+		cv::Mat srcMat = cv::imdecode(imgData, cv::IMREAD_COLOR);
+		cv::imwrite("source.png", srcMat);
+		
+		//std::vector<unsigned char> imgJPG = ImenCode(imgData, height, width);
+		//WriteImage(imgData, height, width);
 	}
 }

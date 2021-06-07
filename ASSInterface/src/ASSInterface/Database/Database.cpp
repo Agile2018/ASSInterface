@@ -4,8 +4,8 @@
 #include "Platform/MongoDB/MongoDBASS.h"
 
 namespace ASSInterface {
-	Ref<Database> Database::Create(const std::string& connection)
+	Ref<Database> Database::Create()
 	{
-		return CreateRef<MongoDBASS>(connection);
+		return CreateRef<MongoDBASS>();
 	}
 }

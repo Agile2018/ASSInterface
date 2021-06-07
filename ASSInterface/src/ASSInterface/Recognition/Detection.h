@@ -2,28 +2,35 @@
 
 #include "hzpch.h"
 #include <string>
+#include "tbb/tbb.h"
+
+using namespace tbb;
+
+#pragma warning( disable: 588)
 
 namespace ASSInterface {
 	struct CropSpecification {
 		int length, width, height;
-		unsigned char* crop;
+		std::vector<unsigned char> cropData;
 
 		CropSpecification() {
-			length = 0;
+			length = 0;		
 			width = 0;
-			height = 0;
-			crop = nullptr;
+			height = 0;			
 		}
 	};
 
 	struct DetectSpecification {
 		CropSpecification cropSpec;
-		char** templates;
-		int* sizeData;
+		std::vector<char> templateData;
+		int sizeTemplate;
+		int quality;
+		int task;
 
-		DetectSpecification() {
-			templates = nullptr;
-			sizeData = nullptr;			
+		DetectSpecification() {			
+			sizeTemplate = 0;
+			quality = 0;
+			task = -1;
 		}
 
 	};
@@ -31,12 +38,12 @@ namespace ASSInterface {
 
 	class Detection {
 	public:
-		virtual void AddFiles(const std::string& files) = 0;
-		virtual const DetectSpecification& Get() const = 0;
-	private:
-		virtual void Detect() = 0;
-		virtual void CreateTemplate() = 0;
-		virtual void Crop() = 0;
-		virtual const CropSpecification& GetCropSpecification() const = 0;
+		virtual void BuildTemplatesFromPersonFiles(std::vector<std::string> files) = 0;
+		virtual void Import(std::vector<std::string> files) = 0;
+		virtual inline const Rx::observable<std::vector<DetectSpecification>> Get() const = 0;
+		virtual inline const Rx::observable<concurrent_vector<DetectSpecification>> GetConcurrent() const = 0;
+		virtual void ResetParameters() = 0;
+		static Ref<Detection> CreateInnoDetected(int channel);
+			
 	};
 }

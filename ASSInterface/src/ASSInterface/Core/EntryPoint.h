@@ -9,6 +9,7 @@ int main(int argc, char** argv)
 {
 	
 	ASSInterface::Log::Init();
+	ASSInterface::ImGuiLog::Init();
 	ASS_ERROR_PROFILE_BEGIN_SESSION();
 	ASS_PROFILE_BEGIN_SESSION("Startup", "ASSInterfaceProfile-Startup.json");
 	auto app = ASSInterface::CreateApplication();

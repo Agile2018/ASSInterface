@@ -1,5 +1,7 @@
 #pragma once
+
 #include <ASSInterface.h>
+#include "data/ConstantApplication.h"
 
 class FrameConfiguration {
 public:
@@ -13,8 +15,11 @@ public:
 	void ShowParametersBiometric(bool* p_open);
 	void ShowParametersOnthefly(bool* p_open);
 	void ShowParametersDatabase(bool* p_open);
+	void ShowParametersLicence(bool* p_open);
 	inline std::string GetNameDatabase() { return std::string(databaseName); }
 	inline std::string GetConnectDatabase() { return std::string(connectString); }
+	inline void SetDatabase(ASSInterface::Ref<ASSInterface::Database> db) { dbMongo = db; }
+	inline void SetMessageStatus(std::string* message) { messageStatus = message; }
 private:
 	ASSInterface::LanguageType lg;	
 	ASSInterface::Ref<ASSInterface::Configuration> configurationDB;
@@ -28,20 +33,29 @@ private:
 
 	ASSInterface::Ref<ASSInterface::Database> dbMongo;
 
+	std::string* messageStatus;
 	const char* yesOrno[2] = { "No", "Yes" };
 	const char* numberChannels[4] = { "1", "2", "3", "4" };
+	const char* numberSavedRecords[4] = { "1", "2", "3", "4" };
+	const char* numberGallery[4] = { "1", "2", "3", "4" };
 	char databaseName[20] = "";
 	char connectString[100] = "";
 	char channelAddress[80] = "";
-	char channelName[20] = "";
+	char channelName[50] = "";
+	char idLicence[50] = "";
+	char codeLicence[50] = "";
 	const char* channel = NULL;
+	const char* channelNumbers = NULL;
+	const char* savedRecords = NULL;
+	const char* galleries = NULL;
 	int channelType = 0;
-	int log = -1, id = 0, thrNumber = 1, sizeImg = 15, gpu = 0, mode = 0;
+	int id = 0, thrNumber = 1, gpu = 0, mode = 0;
 	const char* multithreadingMode[3] = { "Max parallel", "Min memory", "Single" };
 	const char* cgpu = NULL;
 	const char* threadManagement = NULL;
 	float maxFace = 0.0f, minFace = 0.0f;
-	int confidenceThreshold = 0, qualityModel = 1, maxDetected = 1, multipleFace = 1,
+	int confidenceThreshold = 0, confidenceThresholdTrack = 0, qualityModel = 1, 
+		maxDetected = 1, multipleFace = 1,
 		speedDetect = 1, speedExtraction = 1, faceCrop = 1, detected = 1, extraction = 1, detectForced = 1;
 	const char* speedDetectExtractionMode[4] = { "Mode default", "Mode balanced", "Mode accurate", "Mode fast" };
 	const char* crop[5] = { "Token frontal", "Full frontal", "Full frontal extended", "Token not frontal", "Token frontal extended" };
@@ -66,7 +80,6 @@ private:
 
 	int detectionThreshold = 0, similarityThreshold = 0, maxTemplates = -1, minScore = 0, maxScore = 0,
 		gallery = 0, deduplicate = 0, concatenate = 0, concatenateMode = 0;
-	const char* galleryOptions[3] = { "Visitors", "Observed", "Employees" };
 	const char* concatenateOptions[2] = { "Auto", "Forced" };
 	const char* galleryDesc = NULL;
 	const char* deduplicateDesc = NULL;
@@ -75,7 +88,8 @@ private:
 
 	int idenSimilarityThreshold = 0, verySimilarityThreshold = 0, bestCadidates = 1, identificationSpeed = 0;
 	int numberTemplates = 1, showNumberImages = 1;
-
+	long dateInitLicence, dateEndLicence;
+	ConstantApplication constantApplication;
 private:
 	void SetParametersDatabase();
 	void SetParametersChannel();
@@ -94,6 +108,7 @@ private:
 	void SaveParametersEnroll();
 	void SaveParametersEntry();
 	void SaveParametersOnTheFly();
+	void SaveParametersLicence();
 	void DropDatabase();
 	
 };

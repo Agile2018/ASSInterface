@@ -11,7 +11,8 @@ ASSInterface/vendor/mongo-cxx-driver/
 ASSInterface/vendor/nlohmann_json/
 ASSInterface/vendor/Rx/
 ASSInterface/vendor/TBB/
-
+ASSInterface/vendor/CUDA/
+ASSInterface/vendor/Innovatrics/
 # Files
 *.user
 **.sln

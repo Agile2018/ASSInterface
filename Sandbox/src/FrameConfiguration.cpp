@@ -1,10 +1,12 @@
 #include "hzpch.h"
 #include "FrameConfiguration.h"
 #include "imgui/imgui.h"
+#include "imgui/addons/imguidatechooser/imguidatechooser.h"
 
 FrameConfiguration::FrameConfiguration(ASSInterface::LanguageType language)
 {
 	lg = language;
+	
 	SetParametersDatabase();
 	SetParametersGlobals();
 	configurationChannel = ASSInterface::Configuration::CreateConfigVideo("video.txt");
@@ -13,6 +15,7 @@ FrameConfiguration::FrameConfiguration(ASSInterface::LanguageType language)
 	configurationEnroll = ASSInterface::Configuration::CreateConfigEnroll();
 	configurationEntry = ASSInterface::Configuration::CreateConfigEntry();
 	configurationOnTheFly = ASSInterface::Configuration::CreateConfigOnTheFly();
+
 }
 
 FrameConfiguration::~FrameConfiguration()
@@ -56,7 +59,7 @@ void FrameConfiguration::ShowParametersFaceProcessing(bool* p_open)
 	ImGui::SliderFloat(ASSInterface::Label::GetLabel(LBL_MAX_IMAGE_SIZE, lg).c_str(), &maxFace, 0.0f, 400.0f);
 	PutToolTip(ASSInterface::Label::GetLabel(DESC_MIN_IMAGE_SIZE, lg));
 	ImGui::PushItemWidth(150);
-	ImGui::SliderFloat(ASSInterface::Label::GetLabel(LBL_MIN_IMAGE_SIZE, lg).c_str(), &minFace, 0.0f, 25.0f);
+	ImGui::SliderFloat(ASSInterface::Label::GetLabel(LBL_MIN_IMAGE_SIZE, lg).c_str(), &minFace, 0.0f, 50.0f);
 	PutToolTip(ASSInterface::Label::GetLabel(DESC_QUALITY_TEMPLATE, lg));
 	ImGui::PushItemWidth(100);
 	ImGui::SliderInt(ASSInterface::Label::GetLabel(LBL_QUALITY_TEMPLATE, lg).c_str(), &qualityModel, 1, 255);
@@ -105,10 +108,8 @@ void FrameConfiguration::ShowParametersFaceProcessing(bool* p_open)
 		}
 		ImGui::EndCombo();
 	}
-
-
-	PutToolTip(ASSInterface::Label::GetLabel(DESC_CONFIDENCE_THRESHOLD, lg));
-	ImGui::Text("Face Detection Forced:"); ImGui::SameLine();
+	PutToolTip(ASSInterface::Label::GetLabel(DESC_DETECTION_FORCED, lg));
+	ImGui::Text(ASSInterface::Label::GetLabel(LBL_DETECTION_FORCED, lg).c_str()); ImGui::SameLine();
 	ImGui::PushItemWidth(100);
 	if (ImGui::BeginCombo("##detectforced", detectForcedDesc)) {
 		for (int n = 0; n < IM_ARRAYSIZE(yesOrno); n++) {
@@ -121,8 +122,8 @@ void FrameConfiguration::ShowParametersFaceProcessing(bool* p_open)
 		}
 		ImGui::EndCombo();
 	}
-	PutToolTip(ASSInterface::Label::GetLabel(DESC_CONFIDENCE_THRESHOLD, lg));
-	ImGui::Text("Face detection ignore multiple faces:"); ImGui::SameLine();
+	PutToolTip(ASSInterface::Label::GetLabel(DESC_MULTIPLE_FACES, lg));
+	ImGui::Text(ASSInterface::Label::GetLabel(LBL_MULTIPLE_FACES, lg).c_str()); ImGui::SameLine();
 	ImGui::PushItemWidth(100);
 	if (ImGui::BeginCombo("##multipleface", multipleFaceDesc)) {
 		for (int n = 0; n < IM_ARRAYSIZE(yesOrno); n++) {
@@ -135,8 +136,8 @@ void FrameConfiguration::ShowParametersFaceProcessing(bool* p_open)
 		}
 		ImGui::EndCombo();
 	}
-	PutToolTip(ASSInterface::Label::GetLabel(DESC_CONFIDENCE_THRESHOLD, lg));
-	ImGui::Text("Face detection:"); ImGui::SameLine();
+	PutToolTip(ASSInterface::Label::GetLabel(DESC_FACE_DETECTION, lg));
+	ImGui::Text(ASSInterface::Label::GetLabel(LBL_FACE_DETECTION, lg).c_str()); ImGui::SameLine();
 	ImGui::PushItemWidth(150);
 	if (ImGui::BeginCombo("##detected", detectedDesc)) {
 		for (int n = 0; n < IM_ARRAYSIZE(modeDetected); n++) {
@@ -149,8 +150,10 @@ void FrameConfiguration::ShowParametersFaceProcessing(bool* p_open)
 		}
 		ImGui::EndCombo();
 	}
-	PutToolTip(ASSInterface::Label::GetLabel(DESC_CONFIDENCE_THRESHOLD, lg));
-	ImGui::Text("Face extraction:"); ImGui::SameLine();
+
+
+	PutToolTip(ASSInterface::Label::GetLabel(DESC_FACE_EXTRACTION, lg));
+	ImGui::Text(ASSInterface::Label::GetLabel(LBL_FACE_EXTRACTION, lg).c_str()); ImGui::SameLine();
 	ImGui::PushItemWidth(150);
 	if (ImGui::BeginCombo("##extraction", extractionDesc)) {
 		for (int n = 0; n < IM_ARRAYSIZE(modeExtraction); n++) {
@@ -200,6 +203,9 @@ void FrameConfiguration::ShowParametersFaceTracking(bool* p_open)
 	ImGui::Separator();
 	ImGui::Spacing();
 
+	PutToolTip(ASSInterface::Label::GetLabel(DESC_CONFIDENCE_THRESHOLD, lg));
+	ImGui::PushItemWidth(150);
+	ImGui::SliderInt(ASSInterface::Label::GetLabel(LBL_CONFIDENCE_THRESHOLD, lg).c_str(), &confidenceThresholdTrack, 0, 10000);
 	PutToolTip(ASSInterface::Label::GetLabel(DESC_TRACK_DISCOVERY_FREQUENCE, lg));
 	ImGui::PushItemWidth(150);
 	ImGui::SliderInt("Track Discovery Frequence:", &discoveryFrecuence, 100, 3000);
@@ -289,10 +295,10 @@ void FrameConfiguration::ShowParametersEnrollmentProcessing(bool* p_open)
 	ImGui::Text("Gallery name:"); ImGui::SameLine();
 	ImGui::PushItemWidth(150);
 	if (ImGui::BeginCombo("##gallery", galleryDesc)) {
-		for (int n = 0; n < IM_ARRAYSIZE(galleryOptions); n++) {
-			bool is_selected = (galleryDesc == galleryOptions[n]);
-			if (ImGui::Selectable(galleryOptions[n], is_selected)) {
-				galleryDesc = galleryOptions[n];
+		for (int n = 0; n < IM_ARRAYSIZE(ConstantApplication::TYPES_PERSON); n++) {
+			bool is_selected = (galleryDesc == ConstantApplication::TYPES_PERSON[n]);
+			if (ImGui::Selectable(ConstantApplication::TYPES_PERSON[n], is_selected)) {
+				galleryDesc = ConstantApplication::TYPES_PERSON[n];
 				ImGui::SetItemDefaultFocus();
 				gallery = n;
 			}
@@ -471,10 +477,6 @@ void FrameConfiguration::ShowParametersBiometric(bool* p_open)
 	}
 
 	PutToolTip(ASSInterface::Label::GetLabel(DESC_CHANNEL_TYPE, lg));
-	ImGui::PushItemWidth(100);
-	ImGui::SliderInt("Face Engine Log level:", &log, -1, 3);
-
-	PutToolTip(ASSInterface::Label::GetLabel(DESC_CHANNEL_TYPE, lg));
 	ImGui::Text("Global GPU enabled:"); ImGui::SameLine();
 	ImGui::PushItemWidth(100);
 	if (ImGui::BeginCombo("##gpu", cgpu)) {
@@ -512,9 +514,6 @@ void FrameConfiguration::ShowParametersBiometric(bool* p_open)
 	ImGui::PushItemWidth(100);
 	ImGui::SliderInt("Thread Number:", &thrNumber, 1, 12);
 
-	PutToolTip(ASSInterface::Label::GetLabel(DESC_CHANNEL_TYPE, lg));
-	ImGui::PushItemWidth(100);
-	ImGui::SliderInt("Min valid image size:", &sizeImg, 15, 400);
 	ImGui::Separator();
 	ImGui::Spacing();
 	if (ImGui::Button("Save parameters")) {
@@ -582,12 +581,12 @@ void FrameConfiguration::ShowParametersDatabase(bool* p_open)
 	PutToolTip(ASSInterface::Label::GetLabel(DESC_CHANNEL_TYPE, lg));
 	ImGui::Text("Name database:"); ImGui::SameLine();
 	ImGui::PushItemWidth(150);
-	ImGui::InputText("##name_database", databaseName, IM_ARRAYSIZE(databaseName));
+	ImGui::InputText("##namedatabase", databaseName, IM_ARRAYSIZE(databaseName));
 
 	PutToolTip(ASSInterface::Label::GetLabel(DESC_CHANNEL_TYPE, lg));
 	ImGui::Text("Connect string:"); ImGui::SameLine();
 	ImGui::PushItemWidth(400);
-	ImGui::InputText("##connect_database", connectString, IM_ARRAYSIZE(connectString));
+	ImGui::InputText("##connectdatabase", connectString, IM_ARRAYSIZE(connectString));
 
 	ImGui::Separator();
 	ImGui::Spacing();
@@ -610,6 +609,96 @@ void FrameConfiguration::ShowParametersDatabase(bool* p_open)
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
 		ImGui::EndPopup();
+	}
+
+	ImGui::End();
+}
+
+void FrameConfiguration::ShowParametersLicence(bool* p_open) {
+	static tm dateInit, dateEnd;
+
+	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
+
+	if (!ImGui::Begin("Data Licence", p_open))
+	{
+		ImGui::End();
+		return;
+	}
+
+	PutToolTip(ASSInterface::Label::GetLabel(DESC_CHANNEL_TYPE, lg));
+	ImGui::Text("ID Licence:"); ImGui::SameLine();
+	ImGui::PushItemWidth(250);
+	ImGui::InputText("##idlicence", idLicence, IM_ARRAYSIZE(idLicence));
+
+	PutToolTip(ASSInterface::Label::GetLabel(DESC_CHANNEL_TYPE, lg));
+	ImGui::Text("Code Licence:"); ImGui::SameLine();
+	ImGui::PushItemWidth(250);
+	ImGui::InputText("##codelicence", codeLicence, IM_ARRAYSIZE(codeLicence));
+
+	PutToolTip(ASSInterface::Label::GetLabel(DESC_CHANNEL_NUMBER, lg));
+	ImGui::Text("Channel Numbers:"); ImGui::SameLine();
+	ImGui::PushItemWidth(50);
+	if (ImGui::BeginCombo("##channel", channelNumbers)) {
+		for (int n = 0; n < IM_ARRAYSIZE(numberChannels); n++) {
+			bool is_selected = (channelNumbers == numberChannels[n]);
+			if (ImGui::Selectable(numberChannels[n], is_selected)) {
+				channelNumbers = numberChannels[n];
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
+
+	PutToolTip(ASSInterface::Label::GetLabel(DESC_CHANNEL_NUMBER, lg));
+	ImGui::Text("Number Saved Records:"); ImGui::SameLine();
+	ImGui::PushItemWidth(50);
+	if (ImGui::BeginCombo("##records", savedRecords)) {
+		for (int n = 0; n < IM_ARRAYSIZE(numberSavedRecords); n++) {
+			bool is_selected = (savedRecords == numberSavedRecords[n]);
+			if (ImGui::Selectable(numberSavedRecords[n], is_selected)) {
+				savedRecords = numberSavedRecords[n];
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
+
+	PutToolTip(ASSInterface::Label::GetLabel(DESC_CHANNEL_NUMBER, lg));
+	ImGui::Text("Number Galleries:"); ImGui::SameLine();
+	ImGui::PushItemWidth(50);
+	if (ImGui::BeginCombo("##galleries", galleries)) {
+		for (int n = 0; n < IM_ARRAYSIZE(numberGallery); n++) {
+			bool is_selected = (galleries == numberGallery[n]);
+			if (ImGui::Selectable(numberGallery[n], is_selected)) {
+				galleries = numberGallery[n];
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
+
+	PutToolTip(ASSInterface::Label::GetLabel(DESC_CHANNEL_NUMBER, lg));
+	ImGui::Text("Licence Start:"); ImGui::SameLine();
+	ImGui::PushItemWidth(250);
+	if (ImGui::DateChooser("##init", dateInit, "%d/%m/%Y")) {
+		time_t tmp = mktime(&dateInit);
+		dateInitLicence = static_cast<long>(tmp);
+	
+	}
+
+	PutToolTip(ASSInterface::Label::GetLabel(DESC_CHANNEL_NUMBER, lg));
+	ImGui::Text("Licence End:"); ImGui::SameLine();
+	ImGui::PushItemWidth(250);
+	if (ImGui::DateChooser("##end", dateEnd, "%d/%m/%Y")) {
+		time_t tmp = mktime(&dateEnd);
+		dateEndLicence = static_cast<long>(tmp);
+	}
+
+	ImGui::Separator();
+	ImGui::Spacing();
+
+	if (ImGui::Button("Save parameters")) {
+		SaveParametersLicence();
 	}
 
 	ImGui::End();
@@ -727,6 +816,7 @@ void FrameConfiguration::SetParametersTrack() {
 		std::any anySpeedTrack = configurationTrack->GetParam("TRACK_SPEED_ACCURACY_MODE");
 		std::any anyOptimus = configurationTrack->GetParam("TRACK_MOTION_OPTIMIZATION");
 		std::any anyDeep = configurationTrack->GetParam("TRACK_DEEP_TRACK");
+		std::any anyConfidence = configurationTrack->GetParam("TRACK_CONFIDENCE_THRESHOLD");
 
 		discoveryFrecuence = std::any_cast<int>(anyDiscovery);
 		timeRedetect = std::any_cast<int>(anyTimeDelta);
@@ -734,6 +824,7 @@ void FrameConfiguration::SetParametersTrack() {
 		speedTrack = std::any_cast<int>(anySpeedTrack);
 		trackOptimus = std::any_cast<int>(anyOptimus);
 		deepTracking = std::any_cast<bool>(anyDeep);
+		confidenceThresholdTrack = std::any_cast<int>(anyConfidence);
 
 		trackingDesc = modeTracking[tracking];
 		speedTrackDesc = speedTracking[speedTrack];
@@ -772,11 +863,10 @@ void FrameConfiguration::SetParametersEnroll() {
 		concatenateMode = std::any_cast<int>(anyConcatenateMode);
 		minScore = std::any_cast<int>(anyMinScore);
 		maxScore = std::any_cast<int>(anyMaxScore);
-		galleryDesc = galleryOptions[gallery];
+		galleryDesc = ConstantApplication::TYPES_PERSON[gallery];
 		deduplicateDesc = yesOrno[deduplicate];
 		concatenateDesc = yesOrno[concatenate];
 		concatenateModeDesc = concatenateOptions[concatenateMode];
-
 	}
 }
 
@@ -812,6 +902,7 @@ void FrameConfiguration::SaveParametersTrack() {
 		configurationTrack->SetParam("TRACK_SPEED_ACCURACY_MODE", speedTrack);
 		configurationTrack->SetParam("TRACK_MOTION_OPTIMIZATION", trackOptimus);
 		configurationTrack->SetParam("TRACK_DEEP_TRACK", deepTracking);		
+		configurationTrack->SetParam("TRACK_CONFIDENCE_THRESHOLD", confidenceThresholdTrack);
 
 		configurationTrack->ParseToFile();
 	}
@@ -916,7 +1007,7 @@ void FrameConfiguration::SaveParametersChannel() {
 
 		std::string address = &channelAddress[0];
 		std::string lblWindow = &channelName[0];
-		lblWindow = "Video " + lblWindow;
+		lblWindow = lblWindow;
 		configurationChannel->SetParam("sourceFlow", channelType);
 		configurationChannel->SetParam("label", lblWindow);
 		switch (channelType)
@@ -943,12 +1034,10 @@ void FrameConfiguration::SaveParametersChannel() {
 
 void FrameConfiguration::SaveParameteresGlobals() 
 {
-	configurationGlobals->SetParam("GLOBAL_CFG_LOG_LEVEL", log);
 	configurationGlobals->SetParam("GLOBAL_GPU_ENABLED", gpu);
 	configurationGlobals->SetParam("GLOBAL_GPU_DEVICE_ID", id);
 	configurationGlobals->SetParam("GLOBAL_THREAD_MANAGEMENT_MODE", mode);
 	configurationGlobals->SetParam("GLOBAL_THREAD_NUM", thrNumber);
-	configurationGlobals->SetParam("GLOBAL_MIN_VALID_IMAGE_SIZE", sizeImg);
 	configurationGlobals->ParseToFile();
 }
 
@@ -956,18 +1045,15 @@ void FrameConfiguration::SetParametersGlobals() {
 	configurationGlobals = ASSInterface::Configuration::CreateConfigGlobal();
 	configurationGlobals->ParseToObject();
 
-	std::any anyLog = configurationGlobals->GetParam("GLOBAL_CFG_LOG_LEVEL");
 	std::any anyGpu = configurationGlobals->GetParam("GLOBAL_GPU_ENABLED");
 	std::any anyId = configurationGlobals->GetParam("GLOBAL_GPU_DEVICE_ID");
 	std::any anyMode = configurationGlobals->GetParam("GLOBAL_THREAD_MANAGEMENT_MODE");
 	std::any anyNum = configurationGlobals->GetParam("GLOBAL_THREAD_NUM");
-	std::any anySize = configurationGlobals->GetParam("GLOBAL_MIN_VALID_IMAGE_SIZE");
-	log = std::any_cast<int>(anyLog);
+	
 	id = std::any_cast<int>(anyId);
 	gpu = std::any_cast<int>(anyGpu);
 	mode = std::any_cast<int>(anyMode);
 	thrNumber = std::any_cast<int>(anyNum);
-	sizeImg = std::any_cast<int>(anySize);
 	cgpu = yesOrno[gpu];
 	threadManagement = multithreadingMode[mode];
 }
@@ -1003,14 +1089,31 @@ void FrameConfiguration::SaveParametersOnTheFly() {
 	}
 }
 
-void FrameConfiguration::DropDatabase() {
-	std::string db = &databaseName[0];
-	std::string cnn = &connectString[0];
-
-	if (!db.empty() && !cnn.empty())
+void FrameConfiguration::SaveParametersLicence()
+{	
+	if (strlen(idLicence) != 0 && strlen(codeLicence) != 0 && 
+		channelNumbers != NULL && savedRecords != NULL && 
+		galleries != NULL && dateInitLicence != 0 && dateEndLicence != 0)
 	{
-		dbMongo = ASSInterface::Database::Create(cnn);
-		dbMongo->SetDatabase(db);
-		dbMongo->Drop();
+		ASSInterface::EntityLicence entLic;
+		entLic.id = &idLicence[0];
+		entLic.code = &codeLicence[0];
+		entLic.channels = atoi(channelNumbers);
+		entLic.records = atoi(savedRecords);
+		entLic.galleries = atoi(galleries);
+		entLic.dateInit = dateInitLicence;
+		entLic.dateEnd = dateEndLicence;
+
+		dbMongo->Add(entLic);
+		*messageStatus = "The file was saved successfully.";
 	}
+	else
+	{
+		*messageStatus = "Empty Fields";
+	}
+}
+
+void FrameConfiguration::DropDatabase() {
+	dbMongo = ASSInterface::Database::Create();
+	dbMongo->Drop();
 }

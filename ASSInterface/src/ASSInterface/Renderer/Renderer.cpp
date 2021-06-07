@@ -2,6 +2,7 @@
 #include "Renderer.h"
 
 #include "Platform/OpenGL/OpenGLShader.h"
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace ASSInterface {
 
@@ -41,6 +42,7 @@ namespace ASSInterface {
 
 		vertexArray->Bind();
 		RenderCommand::DrawIndexed(vertexArray);
+		
 	}
 
 	void Renderer::Submit(const Ref<Shader>& shader, const Ref<VertexArray>& vertexArray, int lineWidth)
@@ -48,7 +50,7 @@ namespace ASSInterface {
 		ASS_PROFILE_FUNCTION();
 
 		shader->Bind();
-		std::dynamic_pointer_cast<OpenGLShader>(shader)->UploadUniformMat4("u_ViewProjection", s_SceneData->ViewProjectionMatrix);
+		std::dynamic_pointer_cast<OpenGLShader>(shader)->UploadUniformMat4("u_ViewProjection", s_SceneData->ViewProjectionMatrix); //
 
 		vertexArray->Bind();
 		RenderCommand::DrawIndexed(vertexArray, lineWidth);

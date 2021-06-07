@@ -45,7 +45,8 @@ namespace ASSInterface {
 
 		/*Mat reference(cv::Mat(cv::Size(widthFrame, heightFrame),
 			CV_8UC3, (char*)&data[0], cv::Mat::AUTO_STEP));*/
-		
+		void* face = nullptr;
+		DetectSpecification specDetect;
 		cv::Mat reference = cv::imdecode(data, cv::IMREAD_COLOR);
 
 		cv::cvtColor(reference, grayFrame, COLOR_BGR2GRAY);
@@ -58,7 +59,7 @@ namespace ASSInterface {
 		}
 		
 		referenceFrame = reference.clone();
-		CreateTemplate();
+		CreateTemplate(face, specDetect);
 
 
 
@@ -77,7 +78,11 @@ namespace ASSInterface {
 		return nullptr;
 	}
 
-	void OpenCVTracking::CreateTemplate()
+	void OpenCVTracking::Terminate()
+	{
+	}
+
+	void OpenCVTracking::CreateTemplate(void* face, DetectSpecification& specDetect)
 	{
 		flowData.clear();
 		int params[3] = { 0 };
@@ -92,7 +97,7 @@ namespace ASSInterface {
 		
 	}
 
-	void OpenCVTracking::Crop()
+	void OpenCVTracking::Crop(void* face, CropSpecification& specCrop)
 	{
 	}
 

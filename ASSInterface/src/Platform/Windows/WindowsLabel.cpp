@@ -61,6 +61,23 @@ namespace ASSInterface {
 		languages.push_back({ L"Face Template Extraction Speed Accuracy:", L"Precisión de la velocidad de extracción de la plantilla facial:" });
 		languages.push_back({ L"Face can be cropped using one of listed methods.", L"La cara se puede recortar utilizando uno de los métodos enumerados." });
 		languages.push_back({ L"Face Crop Full Frontal Scale:", L"Escala frontal completa de recorte facial:" });
+		languages.push_back({ L"Detects dominant face in given image and sets face detection results into given preallocated face entity. This API function can be used in scenario when face is in image for sure, but the quality of the image is not high.", L"Detecta el rostro dominante en una imagen determinada y establece los resultados de la detección de rostro en una entidad de rostro preasignada determinada. Esta función de API se puede utilizar en un escenario en el que la cara está en la imagen con seguridad, pero la calidad de la imagen no es alta." });
+		languages.push_back({ L"Face Detection Forced:", L"Detección facial forzada:" });
+		languages.push_back({ L"Recognition of multiples faces in frame.", L"Reconocimiento de múltiples caras en el marco." });
+		languages.push_back({ L"Face detection ignore multiple faces:", L"La detección de rostros ignora múltiples rostros:" });
+		languages.push_back({ L"This parameter adjusts face detection speed.", L"Este parámetro ajusta la velocidad de detección de rostros." });
+		languages.push_back({ L"Face detection speed:", L"Velocidad de detección de rostros:" });
+		languages.push_back({ L"This parameter adjusts face/iris extraction speed.", L"Este parámetro ajusta la velocidad de extracción de la cara / iris." });
+		languages.push_back({ L"Adjusted face/iris extraction speed:", L"Velocidad de extracción de iris / rostro ajustada:" });
+		languages.push_back({ L"Registered", L"Registrada" });
+		languages.push_back({ L"Captured", L"Capturada" });
+		languages.push_back({ L"Data", L"Datos" });
+		languages.push_back({ L"Name:", L"Nombre:" });
+		languages.push_back({ L"Channel:", L"Canal:" });
+		languages.push_back({ L"Match:", L"Apareo:" });
+		languages.push_back({ L"Date:", L"Fecha:" });
+		languages.push_back({ L"Gallery:", L"Galería:" });
+		languages.push_back({ L"Last name:", L"Apellido:" });
 	}
 
 	std::string WindowsLabel::CodeUTF8(const std::wstring& wstr) {		

@@ -14,7 +14,7 @@ namespace ASSInterface {
 	{
 		std::vector<std::string> filePaths;
 		OPENFILENAMEA ofn;
-		CHAR szFile[1024] = { 0 };
+		CHAR szFile[2048] = { 0 }; //1024
 		ZeroMemory(&ofn, sizeof(OPENFILENAME));
 		ofn.lStructSize = sizeof(OPENFILENAME);
 		ofn.hwndOwner = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeWindow());

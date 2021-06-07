@@ -8,10 +8,9 @@
 #include "ASSInterface/Utils/PlatformUtils.h"
 
 static bool show_configuration_menu_bar = false;
+static bool show_enrollment_rav_menu_bar = false;
 static bool show_enrollment_menu_bar = false;
 static bool show_control_entry_menu_bar = false;
-static bool show_video1_menu_bar = false;
-static bool show_video2_menu_bar = false;
 static bool show_face_processing = false;
 static bool show_face_tracking = false;
 static bool show_face_enrollment = false;
@@ -20,58 +19,38 @@ static bool show_params_channel = false;
 static bool show_params_global_biometric = false;
 static bool show_params_enroll_onthefly = false;
 static bool show_params_database = false;
-static bool show_unidentified = false;
 static bool show_output_control = false;
 static bool show_simple_overlay = false;
-
+static bool show_view_reset = false;
+static bool show_operational = false;
+static bool show_register_debug = false;
+static bool show_inside_debug = false;
+static bool show_comunication_debug = false;
+static bool show_mobile = false;
+static bool show_params_licence = false;
+static bool show_inside_control = false;
+static bool show_unidentified = false;
+static bool show_log = false;
+static bool show_edit_register = false;
+static bool show_import = false;
 
 MainForm::MainForm() : Layer("WhoIsLayer")
-{			
-	lg = ASSInterface::Label::GetCurrentLanguage();
-	managerFile = ASSInterface::File::Create();
-	managerFile->CreateFolder(managerFile->GetFolderConfiguration());
-	//transformImage = ASSInterface::TransformImage::Create();
+{					
+	InitResources();
+	InitForms();
 
-	frmConfiguration = new FrameConfiguration(lg);
-	dbMongo = ASSInterface::Database::Create(frmConfiguration->GetConnectDatabase());
-	dbMongo->SetDatabase(frmConfiguration->GetNameDatabase());	
-	frmEnrollment->SetDatabase(dbMongo);
+	ObserverChannelTask();
 
-	for (int i = 0; i < MAX_CHANNELS; i++)
-	{				
-		videos[i].Init(i + 1);
-	}			
-	
-	frmControlEntry->SetViewChannel(&show_video1_menu_bar);
-	frmControlEntry->SetViewChannel(&show_video2_menu_bar);
-	frmEnrollment->SetViewChannel(&show_video1_menu_bar);
-	frmEnrollment->SetViewChannel(&show_video2_menu_bar);
+	//Controls
+	*messageStatus = "Welcome";
+	ASSInterface::ImGuiLog::AddLog("[%s], date: [%s], result: [%s]\n",
+		ASSInterface::ImGuiLog::Categories(0), ASSInterface::DateTime::Now().c_str(), 
+		"Welcome, Init Log");			
+}
 
-
-	//temp
-	frmControlEntry->SetNameOperator("Angel Martinez");
-	//base64 = ASSInterface::Base64::Create();
-		
-	SetImageToTexture("assets/textures/photo.png", frmControlEntry->GetPersonLasAction()->txtGallery);
-	SetImageToTexture("assets/textures/photo.png", frmControlEntry->GetPersonLasAction()->txtCapture);
-	std::string dateDetect = ASSInterface::DateTime::Now();
-	strcpy(frmControlEntry->GetPersonLasAction()->date, dateDetect.c_str());
-
-	SetImageToTexture("assets/textures/obiwan.png", personSpecificationDetect.txtGallery);
-	SetImageToTexture("assets/textures/obiwan.png", personSpecificationDetect.txtCapture);	
-	strcpy(personSpecificationDetect.date, dateDetect.c_str());
-	strcpy(personSpecificationDetect.type, "Employee");
-	strcpy(personSpecificationDetect.state, "Not autorized");
-
-	frmControlEntry->SetPersonDetected(personSpecificationDetect);
-	
-	
-	//SetImageToTexture("assets/textures/avatar.png", frmEnrollment->GetPersonEnrolled()->txtCapture);
-			
-	LoadUnidentified();
-
-	progressBar = prgBar;
-	
+MainForm::~MainForm()
+{
+	initInnovatrics->Terminate();
 }
 
 void MainForm::OnAttach()
@@ -112,51 +91,72 @@ void MainForm::OnEvent(ASSInterface::Event& event)
 
 void MainForm::ShowVideo(bool* p_open, int channel)
 {
-	if (!videos[channel].GetFlowRunning())
+	if (videos[channel].IsCorrectStart())
 	{
-		videos[channel].StartThread(videos[channel].GetNameThreadRun(), *p_open);
+		if (!videos[channel].GetFlowRunning())
+		{
+			videos[channel].StartThread(videos[channel].GetNameThreadRun(), *p_open);
+		}
+		videos[channel].ShowVideo(p_open);
+
 	}
-	videos[channel].ShowVideo(p_open);
+	else
+	{
+		*messageStatus = "Channel disabled.";
+	}
 }
 
-void MainForm::ShowMenuEnrollment(bool* p_open)
+void MainForm::ShowMenuEnrollmentRAV(bool* p_open)
 {	
 	if (indexUnidentified != -1)
 	{
-		frmEnrollment->SetEnabledCapture(false);
+		//frmEnrollment->SetEnabledCapture(false);
 		frmEnrollment->GetPersonEnrolled()->txtCapture = frmUnidentified->GetPersonUnidentified(indexUnidentified)->txtCapture;
 		frmEnrollment->GetPersonEnrolled()->bufferCapture.clear();
 		frmEnrollment->GetPersonEnrolled()->bufferCapture.assign(&frmUnidentified->GetPersonUnidentified(indexUnidentified)->bufferCapture[0], &frmUnidentified->GetPersonUnidentified(indexUnidentified)->bufferCapture[0] + frmUnidentified->GetPersonUnidentified(indexUnidentified)->bufferCapture.size());
 
-		std::string id = std::to_string(indexUnidentified);
-		strcpy(frmEnrollment->GetPersonEnrolled()->id, id.c_str());		
+		std::string idTemp = std::to_string(indexUnidentified);
+		strcpy(frmEnrollment->GetPersonEnrolled()->idtemp, idTemp.c_str());
+		strcpy(frmEnrollment->GetPersonEnrolled()->match, frmUnidentified->GetPersonUnidentified(indexUnidentified)->match);
+		strcpy(frmEnrollment->GetPersonEnrolled()->channel, frmUnidentified->GetPersonUnidentified(indexUnidentified)->channel);
+		frmEnrollment->GetPersonEnrolled()->templateFace.clear();
+		frmEnrollment->GetPersonEnrolled()->templateFace.assign(&frmUnidentified->GetPersonUnidentified(indexUnidentified)->templateFace[0], &frmUnidentified->GetPersonUnidentified(indexUnidentified)->templateFace[0] + frmUnidentified->GetPersonUnidentified(indexUnidentified)->templateFace.size());
+		int chn = atoi(frmUnidentified->GetPersonUnidentified(indexUnidentified)->channel);
+		chn -= 1;
+		
+		frmEnrollment->ClearTask();
+		frmEnrollment->SetInnoTask(videos[chn].GetExecuteTask());
+
 		indexUnidentified = -1;
 	}
-	strcpy(personSpecificationDetect.id, "-1");	 
-	frmEnrollment->Show(p_open, personSpecificationDetect);
-	std::string id = &personSpecificationDetect.id[0];
-	if (id != "-1")
+
+	strcpy(personSpecificationTemp.idtemp, "-1");	 
+	frmEnrollment->ShowRAV(p_open, personSpecificationTemp);
+	std::string idTemp = &personSpecificationTemp.idtemp[0];
+	if (idTemp != "-1")
 	{
-		std::string state = &personSpecificationDetect.state[0];
+		std::string state = &personSpecificationTemp.state[0];
 		if (state == "Autorized")
 		{
-			frmOutputControl->SetPersonInside(personSpecificationDetect);
+			frmOutputControl->SetPersonInside(personSpecificationTemp);
 		}
 		else
 		{
-			frmControlEntry->SetPersonDetected(personSpecificationDetect);
+			frmControlEntry->SetPersonDetected(personSpecificationTemp);
 			
 		}
 		
-		frmUnidentified->RemovePersonUnidentified(atoi(id.c_str()));
+		CloseConnections();
+
+		frmUnidentified->RemovePersonUnidentified(atoi(idTemp.c_str()));
 
 		//Temp
-		int img = distribution(generator);
+		/*int img = distribution(generator);
 		std::string path = "assets/textures/" + std::to_string(img) + ".png";
 		SetImageToTexture(path, txtWindowTip);
 		timeStartWindowTip = clock();
 		show_simple_overlay = true;
-		ShowWindowTip(&show_simple_overlay);
+		ShowWindowTip(&show_simple_overlay);*/
 		//
 
 		*p_open = false;
@@ -166,37 +166,17 @@ void MainForm::ShowMenuEnrollment(bool* p_open)
 
 void MainForm::ShowMenuControlEntry(bool* p_open)
 {
-	strcpy(personSpecificationDetect.id, "-1");
-	frmControlEntry->Show(p_open, personSpecificationDetect);
+	
+	strcpy(personSpecificationTemp.id, "-1");
+	frmControlEntry->Show(p_open, personSpecificationTemp);
 
-	std::string id = &personSpecificationDetect.id[0];
+	std::string id = &personSpecificationTemp.id[0];
 	if (id != "-1")
 	{
-		frmOutputControl->SetPersonInside(personSpecificationDetect);		
+		frmOutputControl->SetPersonInside(personSpecificationTemp);		
 	}
 }
 
-void MainForm::LoadUnidentified() {
-	for (int i = 0; i < 7; i++)
-	{
-		std::string dateDetect = ASSInterface::DateTime::Now();
-		std::string path = "assets/textures/" + std::to_string(i) + ".png";
-		PersonSpecification pSpec;
-		strcpy(pSpec.date, dateDetect.c_str());				
-		SetImageToTexture(path, pSpec.txtCapture);	
-
-		unsigned char* data = nullptr;
-		{			
-			int width, height, channels;
-			data = SOIL_load_image(path.c_str(), &width, &height, &channels, 0);
-			int size = width * height * channels;
-			pSpec.bufferCapture.assign(data, data + size);
-		}
-
-		frmControlEntry->SetPersonUnidentified(pSpec);
-		frmUnidentified->SetPersonUnidentified(pSpec);
-	}
-}
 
 //bool MainForm::SaveDataPerson(int channel)
 //{
@@ -255,21 +235,9 @@ void MainForm::LoadUnidentified() {
 //
 //	
 //	}
-//		
+//		transImage
+// 
 //}
-
-void MainForm::SetImageToTexture(const std::string& path, ASSInterface::Ref<ASSInterface::Texture2D>& texture)
-{
-	texture = ASSInterface::Texture2D::Create(path);
-	
-}
-
-void MainForm::SetImageToTexture(void* data, uint32_t width, uint32_t height, uint32_t channel, 
-	ASSInterface::Ref<ASSInterface::Texture2D>& texture)
-{
-	texture = ASSInterface::Texture2D::Create(data, width, height, channel);
-	
-}
 
 void MainForm::OnImGuiRender()
 {
@@ -321,15 +289,71 @@ void MainForm::OnImGuiRender()
 	ImGui::End();
 }
 
+void MainForm::InitResources()
+{
+	progressBar = prgBar;
+
+	//Language
+	lg = ASSInterface::Label::GetCurrentLanguage();
+	//Files
+	managerFile = ASSInterface::File::Create();
+	managerFile->CreateFolder(managerFile->GetFolderConfiguration());
+	//Database
+	dbMongo = ASSInterface::Database::Create();
+	//Recognition
+	initInnovatrics = ASSInterface::InitLibrary::CreateInnovatrics();	
+	initInnovatrics->Init();
+}
+
+void MainForm::InitForms()
+{
+	//Forms
+	frmConfiguration = new FrameConfiguration(lg);
+	frmControlEntry = new FrameControlEntry(lg);
+	frmEnrollment = new FrameEnrollment(lg);
+	frmEditRegister = new FrameEditRegister(lg);
+	frmImport = new FrameImport(lg);
+	frmEnrollment->SetDatabase(dbMongo);
+	frmConfiguration->SetDatabase(dbMongo);
+	frmControlEntry->SetDatabase(dbMongo);
+	frmOutputControl->SetDatabase(dbMongo);
+	frmEditRegister->SetDatabase(dbMongo);
+	frmImport->SetDatabase(dbMongo);
+	frmImport->SetMessageStatus(messageStatus);
+	frmConfiguration->SetMessageStatus(messageStatus);
+	frmEnrollment->SetMessageStatus(messageStatus);
+	frmEditRegister->SetMessageStatus(messageStatus);
+	for (int i = 0; i < MAX_CHANNELS; i++)
+	{
+		videos[i].SetMessageStatus(messageStatus);
+		videos[i].Init(i + 1);
+		frmControlEntry->SetViewChannel(&stateVideo[i]);
+		frmEnrollment->SetViewChannel(&stateVideo[i]);
+		frmImport->SetViewChannel(&stateVideo[i]);
+	}
+
+	for (int i = 0; i < MAX_CHANNELS; i++) {
+		videos[i].SetDatabase(dbMongo);
+	}
+
+	for (int i = 0; i < MAX_CHANNELS - 1; i++)
+	{
+		for (int y = 0; y < MAX_CHANNELS; y++)
+		{
+			frmTracking[i].SetViewChannel(&stateVideo[y]);			
+		}
+		frmTracking[i].SetDatabase(dbMongo);
+	}
+
+	ObserverIdentification();
+	ObserverTextureDocument();
+	ObserverConnection();
+}
+
 void MainForm::ShowMenuMain()
 {
 	
 	if (show_configuration_menu_bar) ShowMenuConfiguration(&show_configuration_menu_bar);
-
-	if (show_video1_menu_bar) ShowVideo(&show_video1_menu_bar, 0);
-	if (!show_video1_menu_bar) videos[0].StopThread(videos[0].GetNameThreadRun());
-	if (show_video2_menu_bar) ShowVideo(&show_video2_menu_bar, 1);
-	if (!show_video2_menu_bar) videos[1].StopThread(videos[1].GetNameThreadRun());
 	if (show_face_processing) frmConfiguration->ShowParametersFaceProcessing(&show_face_processing);
 	if (show_face_tracking) frmConfiguration->ShowParametersFaceTracking(&show_face_tracking);
 	if (show_face_enrollment) frmConfiguration->ShowParametersEnrollmentProcessing(&show_face_enrollment);
@@ -338,61 +362,136 @@ void MainForm::ShowMenuMain()
 	if (show_params_global_biometric) frmConfiguration->ShowParametersBiometric(&show_params_global_biometric);
 	if (show_params_enroll_onthefly) frmConfiguration->ShowParametersOnthefly(&show_params_enroll_onthefly);
 	if (show_params_database) frmConfiguration->ShowParametersDatabase(&show_params_database);
+	if (show_params_licence) frmConfiguration->ShowParametersLicence(&show_params_licence);
 
 	if (show_output_control) frmOutputControl->Show(&show_output_control);
-	if (show_unidentified) frmUnidentified->Show(&show_unidentified, &show_enrollment_menu_bar, indexUnidentified);
-	if (show_enrollment_menu_bar) ShowMenuEnrollment(&show_enrollment_menu_bar);
-	if (show_control_entry_menu_bar) ShowMenuControlEntry(&show_control_entry_menu_bar);
-	if (!show_enrollment_menu_bar) {
-		frmEnrollment->SetEnabledCapture(true);		
+	if (show_unidentified) {				
+		frmUnidentified->Show(&show_unidentified,
+			&show_enrollment_rav_menu_bar, indexUnidentified);
+	}
+	
+	if (show_enrollment_menu_bar) frmEnrollment->Show(
+		&show_enrollment_menu_bar, personSpecificationTemp);
+	if (!show_enrollment_menu_bar) frmEnrollment->ResetChannel();
+
+	if (show_enrollment_rav_menu_bar) ShowMenuEnrollmentRAV(&show_enrollment_rav_menu_bar);
+	
+	if (show_inside_control) ShowMenuControlEntry(&show_inside_control); 
+	
+	for (int i = 0; i < MAX_CHANNELS - 1; i++)
+	{
+		if (stateFrmTrack[i]) frmTracking[i].Show(&stateFrmTrack[i], i);
+	}
+
+	for (int j = 0; j < MAX_CHANNELS; j++)
+	{
+		if(stateVideo[j]) 
+			ShowVideo(&stateVideo[j], j);
+		else {
+			videos[j].StopThread(videos[j].GetNameThreadRun());
+			if (j + 1 == frmEnrollment->GetIndexCurrentVideo())
+			{
+				frmEnrollment->ResetButtonVideo();
+			}
+		}
+			
+	}
+
+	if (!show_enrollment_rav_menu_bar) {				
 		indexUnidentified = -1;
-		frmEnrollment->CleanSpecification();
-		SetImageToTexture("assets/textures/avatar.png", frmEnrollment->GetPersonEnrolled()->txtCapture);		
+		frmEnrollment->CleanSpecification(0);		
 	}
 		
 	if (show_simple_overlay) ShowWindowTip(&show_simple_overlay);
 
+	if (show_log) ShowAppLog(&show_log);
+
+	if (show_edit_register) frmEditRegister->Show(&show_edit_register);
+
+	if (show_import) frmImport->Show(&show_import);
+
+
 	if (ImGui::BeginMenuBar())
 	{
-		if (ImGui::BeginMenu("File"))
-		{
-			if (ImGui::BeginMenu("Configuration")) {
-				ImGui::MenuItem("All parameters", NULL, &show_configuration_menu_bar);
-				if (ImGui::BeginMenu(ASSInterface::Label::GetLabel(LBL_GLOBAL_PARAMETERS, lg).c_str())) {
-					ImGui::MenuItem("Global biometric parameters", NULL, &show_params_global_biometric);
-					ImGui::MenuItem("Global enrollment on-the-fly parameters", NULL, &show_params_enroll_onthefly);
-					ImGui::MenuItem("Database parameters", NULL, &show_params_database);					
-					ImGui::EndMenu();
-				}
-				if (ImGui::BeginMenu("Channel parameters")) {
-					ImGui::MenuItem("Facial processing parameters", NULL, &show_face_processing);
-					ImGui::MenuItem("Facial tracking parameters", NULL, &show_face_tracking);
-					ImGui::MenuItem("Enrollment processing parameters", NULL, &show_face_enrollment);
-					ImGui::MenuItem("Access control and matching", NULL, &show_control_entry_match);
-					ImGui::MenuItem("Channel configuration", NULL, &show_params_channel);
-					ImGui::EndMenu();
-				}
-				ImGui::EndMenu();
+		if (ImGui::BeginMenu("File")) {
+			ImGui::MenuItem("View reset", NULL, &show_view_reset);
+			if (ImGui::MenuItem("Exit")) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+				ASSInterface::Application::Get().Close();
 			}
-			
-			if (ImGui::BeginMenu("Shoot Channel"))
-			{
-				ImGui::MenuItem("Video 1", NULL, &show_video1_menu_bar);
-				ImGui::MenuItem("Video 2", NULL, &show_video2_menu_bar);				
-				ImGui::EndMenu();
-			}
-			if (ImGui::MenuItem("Exit")) ASSInterface::Application::Get().Close();
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu("Recognition"))
-		{
-			ImGui::MenuItem("Enrollment", NULL, &show_enrollment_menu_bar);
-			ImGui::MenuItem("Control Entry", NULL, &show_control_entry_menu_bar);
-			ImGui::MenuItem("Control Unidentified", NULL, &show_unidentified);
-			ImGui::MenuItem("Output Control", NULL, &show_output_control);			
 			ImGui::EndMenu();
 		}
 
+		if (ImGui::BeginMenu("Complete registration")) {
+			ImGui::MenuItem("Register", NULL, &show_enrollment_menu_bar);
+			ImGui::MenuItem("Edit Register", NULL, &show_edit_register);
+			ImGui::MenuItem("Imports", NULL, &show_import);
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Reports")) {
+
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Entry control")) {
+
+			if (ImGui::BeginMenu("Operational")) {
+				ImGui::MenuItem("Inside control", NULL, &show_inside_control);
+				ImGui::MenuItem("Outside control", NULL, &show_output_control);
+				ImGui::MenuItem("Unidentified control", NULL, &show_unidentified);
+				ImGui::EndMenu();
+			}
+			
+			if (ImGui::BeginMenu("Deployment")) {
+				
+				for (int i = 0; i < MAX_CHANNELS - 1; i++)
+				{
+					std::string name = "Tracking control " + std::to_string(i);
+					ImGui::MenuItem(name.c_str(), NULL, &stateFrmTrack[i]);
+				}
+
+				ImGui::EndMenu();
+			}
+			
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Configuration")) {
+			ImGui::MenuItem("All parameters", NULL, &show_configuration_menu_bar);
+			if (ImGui::BeginMenu(ASSInterface::Label::GetLabel(LBL_GLOBAL_PARAMETERS, lg).c_str())) {
+				ImGui::MenuItem("Global biometric parameters", NULL, &show_params_global_biometric);
+				ImGui::MenuItem("Global enrollment on-the-fly parameters", NULL, &show_params_enroll_onthefly);
+				ImGui::MenuItem("Database parameters", NULL, &show_params_database);
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Channel parameters")) {
+				ImGui::MenuItem("Facial processing parameters", NULL, &show_face_processing);
+				ImGui::MenuItem("Facial tracking parameters", NULL, &show_face_tracking);
+				ImGui::MenuItem("Enrollment processing parameters", NULL, &show_face_enrollment);
+				ImGui::MenuItem("Access control and matching", NULL, &show_control_entry_match);
+				ImGui::MenuItem("Channel configuration", NULL, &show_params_channel);
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Client parameters")) {
+				ImGui::MenuItem("Data licence", NULL, &show_params_licence);
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Debug"))
+		{
+			ImGui::MenuItem("Register", NULL, &show_register_debug);
+			ImGui::MenuItem("Inside", NULL, &show_inside_debug);
+			ImGui::MenuItem("Comunication", NULL, &show_comunication_debug);
+			ImGui::MenuItem("Mobile", NULL, &show_mobile);
+			ImGui::MenuItem("Log", NULL, &show_log);
+			ImGui::EndMenu();
+		}
+		
 		ImGui::EndMenuBar();
 	}
 }
@@ -447,9 +546,9 @@ void MainForm::ShowMenuConfiguration(bool* p_open)
 
 		ImGui::TreePop();
 	}
-	if (ImGui::TreeNode("License parameters")) {
+	if (ImGui::TreeNode("Client parameters")) {
 		if (ImGui::Button("License data")) {
-
+			show_params_licence = true;
 		}
 		ImGui::TreePop();
 	}
@@ -476,12 +575,17 @@ void MainForm::ShowStatusBar() {
 		ImGuiWindowFlags_NoSavedSettings;
 	ImGui::Begin("#statusbar", nullptr, window_flags);
 	ImGui::PopStyleVar(3);
-	ImGui::Text(messageStatus.c_str()); ImGui::SameLine();
+	ImGui::Text((*messageStatus).c_str()); ImGui::SameLine();
 	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(ImColor(255, 255, 51)));
 	ImGui::Text(progressBar.c_str(), "|/-\\"[(int)(ImGui::GetTime() / 0.05f) & 3]); ImGui::SameLine();
 	ImGui::PopStyleColor();
+	ImGui::SetCursorPos(ImVec2((viewport->Size.x - 500.0f), 0.0f));
+	ImGui::Text("Operator:");
+	ImGui::SetCursorPos(ImVec2((viewport->Size.x - 420.0f), 0.0f));
+	ImGui::Text(nameOperator.c_str());
 	ImGui::SetCursorPos(ImVec2((viewport->Size.x - 130.0f), 0.0f));
 	ImGui::Text(currentDate.c_str());
+
 	ImGui::End();
 	
 }
@@ -493,7 +597,7 @@ void MainForm::ShowWindowTip(bool* p_open) {
 	ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
 	if (ImGui::Begin("Window Tip", p_open, window_flags))
 	{						
-		ImGui::Image((void*)txtWindowTip->GetRendererID(), ImVec2{ 60.0f, 75.0f });
+		//ImGui::Image((void*)txtWindowTip->GetRendererID(), ImVec2{ 60.0f, 75.0f });
 		ImGui::SameLine();		
 		ImGui::BeginGroup();
 		ImFont* font_current = ImGui::GetFont();
@@ -516,4 +620,202 @@ void MainForm::ShowWindowTip(bool* p_open) {
 	}
 
 	ImGui::End();
+}
+
+void MainForm::ObserverChannelTask()
+{
+	auto channelObservable = frmControlEntry->observableCurrentChannel
+		.map([](int channelSelect) {
+			return channelSelect;
+		});
+
+	auto subscriptionChannel = channelObservable
+		.subscribe([this](int channelSelect) {		
+			if (videos[channelSelect].IsCorrectStart()) {
+				videos[channelSelect].SetTask(CONTROL_ENTRY);
+			}				
+		});
+
+	subscriptionChannel.clear();
+
+	auto channelObservableEnroll = frmEnrollment->GetChannel()
+		.map([](int channelSelect) {
+			return channelSelect;
+		});
+
+	auto subscriptionChannelEnroll = channelObservableEnroll
+		.subscribe([this](int channelSelect) {
+			if (videos[channelSelect].IsCorrectStart()) {
+				videos[channelSelect].SetTask(ENROLL_PERSON);
+				
+			}
+		});
+
+	subscriptionChannelEnroll.clear();
+
+	std::vector<rxcpp::observable<std::tuple<int, int>>> observersChannel;
+	for (int i = 0; i < MAX_CHANNELS - 1; i++)
+	{
+		observersChannel.push_back(frmTracking[i].GetChannel()
+			.map([](std::tuple<int, int> tupleChannel) {
+				return tupleChannel;
+			}));
+	}
+
+	std::vector<rxcpp::subscription> subscriptionsChannel;
+
+	for (int i = 0; i < MAX_CHANNELS - 1; i++)
+	{
+		subscriptionsChannel.push_back(observersChannel[i]
+			.subscribe([this](std::tuple<int, int> tupleChannel) {
+				
+				switch (std::get<1>(tupleChannel))
+				{
+				case 0:
+				{
+					int chn = std::get<0>(tupleChannel);
+					if (videos[chn].IsCorrectStart()) {
+						videos[chn].SetTask(CONTROL_ENTRY_TRACK0);
+					}
+					
+					break;
+				}					
+				case 1:
+				{
+					int chn = std::get<0>(tupleChannel);
+					if (videos[chn].IsCorrectStart()) {
+						videos[chn].SetTask(CONTROL_ENTRY_TRACK1);
+					}
+					break;
+				}					
+				default:
+					break;
+				}
+
+			}));
+
+	}
+	
+}
+
+void MainForm::ObserverIdentification()
+{
+	std::vector<rxcpp::observable<PersonSpecification>> observersPersons;
+	for (int i = 0; i < MAX_CHANNELS; i++)
+	{
+		observersPersons.push_back(videos[i].GetDataPerson()
+			.map([](PersonSpecification personSpecification) {
+				return personSpecification;
+			}));
+	}
+
+	std::vector<rxcpp::subscription> subscriptionsPersons;
+
+	for (int i = 0; i < MAX_CHANNELS; i++)
+	{
+		subscriptionsPersons.push_back(observersPersons[i]
+			.subscribe([this](PersonSpecification personSpecification) {
+				DefinePipe(personSpecification);
+			}));
+
+	}	
+}
+
+void MainForm::ObserverTextureDocument()
+{
+	auto documentObservableObverse = frmEnrollment->GetTextDocumentObverse()
+		.map([](int channelSelect) {
+			return channelSelect;
+		});
+
+	auto subscriptionDocumentObverse = documentObservableObverse
+		.subscribe([this](int channelSelect) {
+			frmEnrollment->SetDocumentObverse(videos[channelSelect].GetDataTexture(),
+				videos[channelSelect].GetWidthImage(), videos[channelSelect].GetHeightImage());
+		});
+
+	subscriptionDocumentObverse.clear();
+
+	auto documentObservableReverse = frmEnrollment->GetTextDocumentReverse()
+		.map([](int channelSelect) {
+		return channelSelect;
+			});
+
+	auto subscriptionDocumentReverse = documentObservableReverse
+		.subscribe([this](int channelSelect) {
+		frmEnrollment->SetDocumentReverse(videos[channelSelect].GetDataTexture(),
+			videos[channelSelect].GetWidthImage(), videos[channelSelect].GetHeightImage());
+		});
+
+	subscriptionDocumentReverse.clear();
+}
+
+void MainForm::ObserverConnection()
+{
+	auto connectedObservable = frmEnrollment->CloseConnection()
+		.map([](bool close) {
+			return close;
+		});
+
+	auto subscriptionConnection = connectedObservable
+		.subscribe([this](bool close) {
+			if (close)
+			{
+				CloseConnections();
+			}
+		});
+
+	subscriptionConnection.clear();
+}
+
+void MainForm::DefinePipe(PersonSpecification specPerson)
+{	
+	int channel = atoi(specPerson.channel);
+	channel -= 1;
+
+	int id = atoi(specPerson.id);
+	if (id == 0 && specPerson.task != ENROLL_PERSON)
+	{		
+		frmUnidentified->SetPersonUnidentified(specPerson);
+	}
+	else
+	{				
+		switch (videos[channel].GetTask())
+		{
+		case CONTROL_ENTRY:
+			frmControlEntry->SetPersonTemp(specPerson);
+			break;
+		case CONTROL_ENTRY_TRACK0:
+			frmTracking[0].SetPersonTemp(specPerson);
+			break;
+		case CONTROL_ENTRY_TRACK1:
+			frmTracking[1].SetPersonTemp(specPerson);
+			break;		
+		default:
+			break;
+		}
+		
+		if (specPerson.task == ENROLL_PERSON)
+		{
+			frmEnrollment->SetDataEnrollTemp(specPerson);
+		}
+	}
+}
+
+void MainForm::CloseConnections()
+{
+	for (int i = 0; i < MAX_CHANNELS; i++) {
+		if (videos[i].GetTask() == CONTROL_ENTRY_TRACK0 || 
+			videos[i].GetTask() == CONTROL_ENTRY_TRACK1 || 
+			videos[i].GetTask() == CONTROL_ENTRY)
+		{
+			videos[i].CloseConnection();
+		}
+
+	}
+}
+void MainForm::ShowAppLog(bool* p_open)
+{
+	ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
+	ASSInterface::ImGuiLog::Draw("WhoIs: Log", p_open);
 }

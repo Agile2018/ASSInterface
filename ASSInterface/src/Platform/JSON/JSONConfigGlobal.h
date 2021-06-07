@@ -17,20 +17,16 @@ namespace ASSInterface {
 		virtual void SaveFile(std::string content) override;
 	private:
 		std::string path;
-		std::string fileConfig = "globals.txt";
-		const std::string GLOBAL_MIN_VALID_IMAGE_SIZE = "GLOBAL_MIN_VALID_IMAGE_SIZE";
+		std::string fileConfig = "globals.txt";		
 		const std::string GLOBAL_GPU_DEVICE_ID = "GLOBAL_GPU_DEVICE_ID";
 		const std::string GLOBAL_GPU_ENABLED = "GLOBAL_GPU_ENABLED";
 		const std::string GLOBAL_THREAD_MANAGEMENT_MODE = "GLOBAL_THREAD_MANAGEMENT_MODE";
-		const std::string GLOBAL_THREAD_NUM = "GLOBAL_THREAD_NUM";
-		const std::string GLOBAL_CFG_LOG_LEVEL = "GLOBAL_CFG_LOG_LEVEL";
-
-		int minValidImageSize = 200;
+		const std::string GLOBAL_THREAD_NUM = "GLOBAL_THREAD_NUM";		
+		
 		int gpuDeviceId = 0;
 		int gpuEnabled = 1;
 		int threadManagementMode = 1;
-		int threadNum = 2;
-		int logLevel = 0;
+		int threadNum = 2;		
 
 		mutable std::unordered_map<std::string, std::any> paramsGlobals;
 		ASSInterface::Ref<ASSInterface::File> managerFile;

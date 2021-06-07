@@ -23,23 +23,27 @@
 #include "ASSInterface/Renderer/OrthographicCameraController.h"
 #include "ASSInterface/Renderer/Framebuffer.h"
 
-//Stream
-#include "ASSInterface/Streamer/Stream.h"
-
 //Database
 #include "ASSInterface/Database/Database.h"
+
+//Stream
+#include "ASSInterface/Streamer/Stream.h"
 
 //Tools
 
 #include "ASSInterface/Utils/DateTime.h"
 #include "ASSInterface/Utils/Base64.h"
 #include "ASSInterface/Utils/TransformImage.h"
+#include "ASSInterface/Utils/Math.h"
 
 //Recognition
-
 #include "ASSInterface/Recognition/Detection.h"
 #include "ASSInterface/Recognition/Identification.h"
 #include "ASSInterface/Recognition/Tracking.h"
+#include "ASSInterface/Recognition/InitLibrary.h"
+#include "ASSInterface/Recognition/ErrorRecognition.h"
+#include "ASSInterface/Recognition/ErrorIdentification.h"
+#include "ASSInterface/Recognition/ExecuteTask.h"
 
 //Configuration
 
@@ -49,6 +53,17 @@
 //Language
 #include "ASSInterface/Core/IndexLabel.h"
 #include "ASSInterface/Core/Label.h"
+
+//Graphic processor
+#include "ASSInterface/Hardware/GraphicProcessor.h"
+
+//Debug
+
+#include "ASSInterface/ImGui/ImGuiLog.h"
+
+//Utils
+
+#include "ASSInterface/Utils/avir.h"
 
 //Trace error
 //#include <ASSInterface/Debug/ErrorInstrumentor.h>

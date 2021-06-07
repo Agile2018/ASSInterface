@@ -10,6 +10,7 @@ namespace ASSInterface {
 		virtual bool DelFile(std::string fileName) = 0;
 		virtual void CreateFolder(std::string nameFolder) = 0;
 		virtual const std::string GetFolderConfiguration() const = 0;
+		virtual bool IsFileExists(std::string path) = 0;
 		static Ref<File> Create();
 	};
 }

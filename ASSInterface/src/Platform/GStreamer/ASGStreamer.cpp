@@ -17,64 +17,78 @@ namespace ASSInterface {
 	{
 		indexChannel = channel;
 		ObserverFlow();
-
-		//Temp
-		trackingOpenCV = ASSInterface::Tracking::CreateOpenCV();
-		trackingOpenCV->Init();
-
-		//trackingAzureFace = ASSInterface::Tracking::CreateAzureTrack();
-
-		
-
+		managerFile = ASSInterface::File::Create();			
+		trackingInno = ASSInterface::Tracking::CreateInnovatrics(indexChannel);
+		innoTask = ASSInterface::ExecuteTask::CreateInnoTask(indexChannel);
 		std::string descriptionFlow;
 		std::string nameFile = "video" + std::to_string(indexChannel) + ".txt";
-		configuration = ASSInterface::Configuration::CreateConfigVideo(nameFile);		
-		configuration->ParseToObject();
-		std::any anyLbl = configuration->GetParam("label");
-		nameWindow = std::any_cast<std::string>(anyLbl);
-		std::any anySrc = configuration->GetParam("sourceFlow");
-		if (anySrc.has_value())
-		{
-			optionSourceFlow = std::any_cast<int>(anySrc);
-			switch (optionSourceFlow)
-			{
-			case 1:				
-				descriptionFlow = std::any_cast<std::string>(configuration->GetParam("ipCamera"));
-				break;
-			case 2:
-				descriptionFlow = std::any_cast<std::string>(configuration->GetParam("fileVideo"));
-				break;
-			case 3:
-				descriptionFlow = std::any_cast<std::string>(configuration->GetParam("deviceVideo"));
-				break;
-			default:
-				break;
-			}
+		std::string pathFile = managerFile->GetFolderConfiguration() + "/" + nameFile;
 
-			if (!descriptionFlow.empty())
+		if (managerFile->IsFileExists(pathFile)) {	
+
+			configuration = ASSInterface::Configuration::CreateConfigVideo(nameFile);
+			configuration->ParseToObject();
+			std::any anyLbl = configuration->GetParam("label");
+			nameWindow = std::any_cast<std::string>(anyLbl);
+			std::any anySrc = configuration->GetParam("sourceFlow");
+			if (anySrc.has_value())
 			{
-				description = DescriptionFlow(optionSourceFlow, descriptionFlow);
-				ASS_INFO("Description flow: {0}", description);
+				optionSourceFlow = std::any_cast<int>(anySrc);
+				switch (optionSourceFlow)
+				{
+				case 1:
+					descriptionFlow = std::any_cast<std::string>(configuration->GetParam("ipCamera"));
+					break;
+				case 2:
+					descriptionFlow = std::any_cast<std::string>(configuration->GetParam("fileVideo"));
+					break;
+				case 3:
+					descriptionFlow = std::any_cast<std::string>(configuration->GetParam("deviceVideo"));
+					break;
+				default:
+					break;
+				}
+
+				if (!descriptionFlow.empty())
+				{
+					description = DescriptionFlow(optionSourceFlow, descriptionFlow);
+					ASS_INFO("Description flow: {0}", description);
+					correctDescription = true;
+				
+				}
+				else
+				{
+					ASS_ERROR("Description flow empty");
+					const char* err = "Description flow empty";
+					ASS_ERROR_PROFILE_SCOPE("ASGStreamer::ASGStreamer", err);
+				}
+
 			}
 			else
 			{
-				ASS_ERROR("Description flow empty");
-				const char* err = "Description flow empty";
+				ASS_ERROR("File config empty");
+				const char* err = "File config empty";
 				ASS_ERROR_PROFILE_SCOPE("ASGStreamer::ASGStreamer", err);
+				
 			}
 
-		}		
+		}
 		else
 		{
-			ASS_ERROR("File config empty");
-			const char* err = "File config empty";
+			ASS_ERROR("File not exists.");
+			const char* err = "File not exists.";
 			ASS_ERROR_PROFILE_SCOPE("ASGStreamer::ASGStreamer", err);
+			
+			
 		}
 
 	}
 	ASGStreamer::~ASGStreamer()
 	{
+		trackingInno->Terminate();
+		innoTask->CloseConnection();
 	}
+
 	void ASGStreamer::Run()
 	{
 		ASS_PROFILE_FUNCTION();
@@ -94,7 +108,9 @@ namespace ASSInterface {
 			ASS_ERROR("Could not construct pipeline: {0}", gError->message);			
 			ASS_ERROR_PROFILE_SCOPE("ASGStreamer::Run", gError->message);
 			g_error_free(gError);
-			exit(-1);
+			correctStart = false;
+			return;
+			//exit(-1);
 		}
 
 		GstElement* sink = gst_bin_get_by_name(GST_BIN(pipeline), "sink");
@@ -116,11 +132,13 @@ namespace ASSInterface {
 		GstStateChangeReturn ret;
 		ret = gst_element_set_state(GST_ELEMENT(pipeline), GST_STATE_PLAYING);
 		if (ret == GST_STATE_CHANGE_FAILURE) {
+			correctStart = false;
 			ASS_ERROR("Unable to set the pipeline to the playing state.");
 			const char* err = "Unable to set the pipeline to the playing state.";
 			ASS_ERROR_PROFILE_SCOPE("ASGStreamer::Run", err);
 			gst_object_unref(pipeline);
-			exit(-1);
+			return;
+			//exit(-1);
 		}
 		
 		loop = g_main_loop_new(nullptr, false);
@@ -179,18 +197,87 @@ namespace ASSInterface {
 			mtxTexture.unlock();
 		}
 		return dataTemp;
+	}	
+
+	float* ASGStreamer::GetCoordinates()
+	{
+		
+		float* coordinatesFace = trackingInno->GetCoordinates();		
+		float highAdjusted = sizeHeightTexture * 2.0f;
+
+		ClearAllCoordinatesImage();
+		
+		for (int i = 0; i < COORDINATES_X_ALL_IMAGES; i += 4) {
+			
+			if (coordinatesFace[i] != 0) {
+				
+				float x = coordinatesFace[i];
+				float y = coordinatesFace[i + 1];
+				float w = coordinatesFace[i + 2];
+				float h = coordinatesFace[i + 3];
+
+				float xc = (x + (w / 2.0f));
+				float yc = (y + (h / 2.0f));
+
+				float px = ((xc * 100.0f) / (float)m_Width);
+				float py = ((yc * 100.0f) / (float)m_Height);
+
+				float xr = (px * 2.0f) / 100.0f;
+				float yr = (py * highAdjusted) / 100.0f;
+
+				if (xr < 1.0f)
+				{
+					xr = (1.0f - xr) * -1.0f;
+				}
+
+				if (xr >= 1.0f)
+				{
+					xr = xr - 1.0f;
+				}
+
+				if (yr < sizeHeightTexture)
+				{
+					yr = (sizeHeightTexture - yr);
+				}
+
+				if (yr >= sizeHeightTexture)
+				{
+					yr = (yr - sizeHeightTexture) * -1.0f;
+				}
+
+				float prw = ((w / 2.0f) * 100.0f / (float)m_Width);
+				float prh = ((h / 2.0f) * 100.0f / (float)m_Height);
+				float ratioWidth = (prw * 2.0f) / 100.0f;
+				float ratioHeight = (prh * highAdjusted) / 100.0f;
+
+				imageCoordinatesFollowed[i] = xr;
+				imageCoordinatesFollowed[i + 1] = yr;
+				imageCoordinatesFollowed[i + 2] = ratioWidth;
+				imageCoordinatesFollowed[i + 3] = ratioHeight;
+
+			}
+
+		}
+		
+		return imageCoordinatesFollowed;
 	}
 
-	std::vector<unsigned char> ASGStreamer::GetDataRaw() {
-		std::vector<unsigned char> dataTemp;
-
-		if (mtxRaw.try_lock()) {
-			dataTemp = dataRawImage;
-			mtxRaw.unlock();
-		}
-		return dataTemp;
-
-	}	
+	void ASGStreamer::InitTracking()
+	{
+		
+		trackingInno->SetWidth(m_Width);
+		trackingInno->SetHeight(m_Height);
+		trackingInno->SetElapseFrame(m_Elapse);
+		trackingInno->Init();		
+		ObserverTracking();
+		ObserverIdentify();
+		//Temp
+		/*trackingOpenCV = ASSInterface::Tracking::CreateOpenCV();
+		trackingOpenCV->SetWidth(m_Width);
+		trackingOpenCV->SetHeight(m_Height);
+		trackingOpenCV->Init();*/
+		isInitTracking = true;
+	}
 
 	char* ASGStreamer::DescriptionFlow(int optionFlow, std::string descriptionFlow)
 	{
@@ -223,24 +310,25 @@ namespace ASSInterface {
 			break;
 		case 2: // FILE		
 
+			//description = g_strdup_printf(
+
+			//	"filesrc location=%s "
+			//	"! decodebin ! videoconvert "
+			//	"! video/x-raw, format=(string)YUY2 "
+			//	"! jpegenc quality=100 "
+			//	"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
+			//	ConvertBackslashToSlash(descriptionFlow).c_str() // I420  , width=(int)1024, height=(int)768  ! videoscale method=0
+			//);
+
 			description = g_strdup_printf(
 
 				"filesrc location=%s "
 				"! decodebin ! videoconvert "
-				"! video/x-raw, format=(string)I420 "
+				"! video/x-raw, format=(string)I420 "	
 				"! jpegenc quality=100 "
 				"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
-				ConvertBackslashToSlash(descriptionFlow).c_str()
+				ConvertBackslashToSlash(descriptionFlow).c_str() //BGR  ! aspectratiocrop aspect-ratio=16/11
 			);
-
-			/*description = g_strdup_printf(
-
-				"filesrc location=%s "
-				"! decodebin ! videoconvert "
-				"! video/x-raw, format=(string)BGR "				
-				"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
-				ConvertBackslashToSlash(descriptionFlow).c_str()
-			);*/
 
 			break;
 		case 3: // CAMERA   
@@ -252,10 +340,9 @@ namespace ASSInterface {
 				"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
 				descriptionFlow.c_str()
 			);*/
-
 			description = g_strdup_printf(
 				"ksvideosrc device-index=%s "
-				"! decodebin ! videoconvert "	
+				"! decodebin ! videoconvert "
 				"! video/x-raw, format=(string)YUY2 "
 				"! jpegenc quality=100 "
 				"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
@@ -289,8 +376,7 @@ namespace ASSInterface {
 	GstFlowReturn ASGStreamer::CaptureGstBuffer(GstAppSink* appsink, gpointer)
 	{
 		ASS_PROFILE_FUNCTION();
-		
-		//clock_t timeStart1 = clock();
+
 		int currentChannel = gst_app_sink_get_max_buffers(appsink);
 
 		GstSample* sample = gst_app_sink_pull_sample(appsink);
@@ -336,9 +422,7 @@ namespace ASSInterface {
 		}
 		gst_buffer_unmap(buffer, &map_info);
 		gst_sample_unref(sample);
-		/*clock_t duration1 = clock() - timeStart1;
-		int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
-		printf("   CAPTURE GST BUFFER time: %d\n", durationMs1);*/
+		
 		return GstFlowReturn::GST_FLOW_OK;
 	}
 
@@ -367,7 +451,6 @@ namespace ASSInterface {
 		return true;
 	}
 		
-
 	void ASGStreamer::ObserverFlow()
 	{
 		auto dimensionsObservable = observableDimensionsImage.map([](std::tuple<int, int, int, int> dimensionsImage) {
@@ -399,6 +482,7 @@ namespace ASSInterface {
 		if (!isInitChannel && indexChannel == std::get<3>(dimensionsImage))
 		{
 			isInitChannel = true;
+			correctStart = true;
 			m_Width = std::get<0>(dimensionsImage);
 			m_Height = std::get<1>(dimensionsImage);
 			m_Fps = std::get<2>(dimensionsImage);
@@ -417,14 +501,7 @@ namespace ASSInterface {
 			{
 				float relation = (float)m_Width / (float)m_Height;
 				sizeHeightTexture = 1.0f / relation;
-			}
-
-			//Temp
-
-			trackingOpenCV->SetWidth(m_Width);
-			trackingOpenCV->SetHeight(m_Height);
-			//trackingAzureFace->SetWidth(m_Width);
-			//trackingAzureFace->SetHeight(m_Height);
+			}			
 			
 		}		
 	}
@@ -436,12 +513,8 @@ namespace ASSInterface {
 			ASS_PROFILE_FUNCTION();
 			clock_t timeStart1 = clock();
 						
-			//std::vector<unsigned char> flow(data, data + size);
-			mtxRaw.lock();
-			dataRawImage.clear();
-			dataRawImage.assign(data, data + size);
-			mtxRaw.unlock();
-
+			std::vector<unsigned char> dataRawImage(data, data + size);
+			
 			//Temp
 			
 			/*tbb::parallel_invoke(
@@ -449,23 +522,17 @@ namespace ASSInterface {
 				[this, data, size]() {BranchVideo(data, size); }
 			);*/
 
-			/*if (isFinishTrack) {
-				std::thread tbt(&ASGStreamer::BranchTracking, this, flow);
-				tbt.detach();
-			}*/
+			if (isInitTracking && !trackingInno->IsTrackFinish())
+			{
+				std::thread tt(&ASGStreamer::BranchTracking, this, dataRawImage);
+				tt.detach();
+
+				/*std::vector<unsigned char> dataDetected = trackingOpenCV->GetFlowData();
+				BranchVideo(dataDetected);*/
+			}
 			
-
-			/*std::thread tbv(&ASGStreamer::BranchVideo, this, data, size);
-			tbv.detach();*/
-
-			//BranchVideo(data, size);
-
-			trackingOpenCV->Detect(dataRawImage);
-
-			std::vector<unsigned char> dataDetected = trackingOpenCV->GetFlowData();
-
-			BranchVideo(dataDetected);
-
+			BranchVideo(data, size);
+			
 			clock_t duration1 = clock() - timeStart1;
 			int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
 
@@ -475,12 +542,7 @@ namespace ASSInterface {
 	}
 	void ASGStreamer::BranchTracking(std::vector<unsigned char> data)
 	{
-				
-		isFinishTrack = false;
-		//trackingAzureFace->Detect(data);
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-		isFinishTrack = true;			
-		
+		trackingInno->Detect(data);										
 	}
 
 	void ASGStreamer::BranchVideo(std::vector<unsigned char> data) {
@@ -497,6 +559,55 @@ namespace ASSInterface {
 		mtxTexture.unlock();
 		SOIL_free_image_data(dataTemp);
 	}
+	void ASGStreamer::ClearCoordinatesImage(int indexTracked)
+	{
+		int index = indexTracked * NUM_COORDINATES_X_IMAGE;
+		imageCoordinatesFollowed[index] = 0.0f;
+		imageCoordinatesFollowed[index + 1] = 0.0f;
+		imageCoordinatesFollowed[index + 2] = 0.0f;
+		imageCoordinatesFollowed[index + 3] = 0.0f;
+	}
+	void ASGStreamer::ClearAllCoordinatesImage()
+	{
+		for (int i = 0; i < NUM_TRACKED_OBJECTS; i++) {
+			ClearCoordinatesImage(i);
+		}
+	}
+	void ASGStreamer::ObserverTracking()
+	{
+		auto trackObservable = trackingInno->Get()
+			.map([](DetectSpecification specDetect) {
+			return specDetect;
+		});
+
+		auto subscriptionTrack = trackObservable
+			.subscribe([this](DetectSpecification specDetect) {			
+			innoTask->DoTask(specDetect);
+		});
+
+		subscriptionTrack.clear();		
+	}
+
+	void ASGStreamer::ObserverIdentify()
+	{
+		auto taskObservable = innoTask->Get()
+			.map([](IdentitySpecification specIdentify) {
+			return specIdentify;
+		});
+
+		auto subscriptionTask = taskObservable
+			.subscribe([this](IdentitySpecification specIdentify) {
+
+			if (!specIdentify.cropData.empty())
+			{
+				shootSpecIdentity.on_next(specIdentify);
+
+			}
+
+		});
+		subscriptionTask.clear();
+
+	}
 
 	void ASGStreamer::BranchVideo(unsigned char* data, int size)
 	{
@@ -510,12 +621,13 @@ namespace ASSInterface {
 			size, &width, &height, &m_Channels, SOIL_LOAD_RGB);
 
 		m_SizeImage = width * height * m_Channels;
-
+		
 		mtxTexture.lock();
 		dataImage.clear();
 		dataImage.assign(dataTemp, dataTemp + m_SizeImage);
 		mtxTexture.unlock();
 		SOIL_free_image_data(dataTemp);
-		
+		delete[] copyFlow;
+
 	}
 }

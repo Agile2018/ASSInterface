@@ -13,6 +13,7 @@ namespace ASSInterface {
 		paramsTrack[TRACK_SPEED_ACCURACY_MODE] = trackSpeed;
 		paramsTrack[TRACK_MOTION_OPTIMIZATION] = motionOptimization;
 		paramsTrack[TRACK_DEEP_TRACK] = deepTrack;
+		paramsTrack[TRACK_CONFIDENCE_THRESHOLD] = confidenceThreshold;
 	}
 
 	JSONConfigTrack::~JSONConfigTrack()
@@ -50,6 +51,10 @@ namespace ASSInterface {
 					deepTrack = it.value();
 					paramsTrack[TRACK_DEEP_TRACK] = deepTrack;
 				}
+				if (it.key() == TRACK_CONFIDENCE_THRESHOLD) {
+					confidenceThreshold = it.value();
+					paramsTrack[TRACK_CONFIDENCE_THRESHOLD] = confidenceThreshold;
+				}
 			}
 		}
 	}
@@ -61,11 +66,12 @@ namespace ASSInterface {
 		trackSpeed = std::any_cast<int>(paramsTrack[TRACK_SPEED_ACCURACY_MODE]);
 		motionOptimization = std::any_cast<int>(paramsTrack[TRACK_MOTION_OPTIMIZATION]);
 		deepTrack = std::any_cast<bool>(paramsTrack[TRACK_DEEP_TRACK]);
-
+		confidenceThreshold = std::any_cast<int>(paramsTrack[TRACK_CONFIDENCE_THRESHOLD]);
 
 		nlohmann::json jParams = nlohmann::json::object({ {COUNT_REDETECT_TIME_DELTA, countRedetectTimeDelta},
 			{FACE_DISCOVERY_FREQUENCE_MS, discoveryFrequenceMS}, {TRACK_TRACKING_MODE, trackingMode}, {TRACK_SPEED_ACCURACY_MODE, trackSpeed},
-			{TRACK_MOTION_OPTIMIZATION, motionOptimization}, {TRACK_DEEP_TRACK, deepTrack }});
+			{TRACK_MOTION_OPTIMIZATION, motionOptimization}, 
+			{TRACK_DEEP_TRACK, deepTrack }, {TRACK_CONFIDENCE_THRESHOLD, confidenceThreshold }});
 
 		std::string jsonToString = jParams.dump();
 		SaveFile(jsonToString);

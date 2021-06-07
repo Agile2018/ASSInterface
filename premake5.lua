@@ -22,7 +22,9 @@ IncludeDir["boost"] = "ASSInterface/vendor/boost"
 IncludeDir["opencv"] = "ASSInterface/vendor/opencv/include"
 IncludeDir["nlohmann_json"] = "ASSInterface/vendor/nlohmann_json/include"
 IncludeDir["TBB"] = "ASSInterface/vendor/TBB/include"
-IncludeDir["cpprestsdk"] = "ASSInterface/vendor/cpprestsdk/include"
+IncludeDir["CUDA"] = "ASSInterface/vendor/CUDA/include"
+IncludeDir["IDKitSDK"] = "ASSInterface/vendor/Innovatrics/IDKitSDK/include"
+IncludeDir["IFaceSDK"] = "ASSInterface/vendor/Innovatrics/IFaceSDK/include"
 
 group "Dependencies"
 	include "ASSInterface/vendor/GLFW"
@@ -62,8 +64,10 @@ project "ASSInterface"
 		"%{prj.name}/vendor/TBB/include/tbb/**.h",
 		"%{prj.name}/vendor/TBB/include/oneapi/**.h",
 		"%{prj.name}/vendor/TBB/include/oneapi/tbb/**.h",
-		"%{prj.name}/vendor/cpprestsdk/include/cpprest/**.h",
-		"%{prj.name}/vendor/cpprestsdk/include/pplx/**.h"
+		"%{prj.name}/vendor/CUDA/include/**.h",
+		"%{prj.name}/vendor/CUDA/include/**.hpp",
+		"%{prj.name}/vendor/Innovatrics/IDKitSDK/include/**.h",
+		"%{prj.name}/vendor/Innovatrics/IFaceSDK/include/**.h"
 	}
 
 	defines
@@ -75,7 +79,7 @@ project "ASSInterface"
 	includedirs
 	{
 		"%{prj.name}/src",
-		"%{prj.name}/vendor/spdlog/include",
+		"%{prj.name}/vendor/spdlog/include",				
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
@@ -86,7 +90,9 @@ project "ASSInterface"
 		"%{IncludeDir.boost}",
 		"%{IncludeDir.nlohmann_json}",
 		"%{IncludeDir.TBB}",
-		"%{IncludeDir.cpprestsdk}",
+		"%{IncludeDir.CUDA}",
+		"%{IncludeDir.IDKitSDK}",
+		"%{IncludeDir.IFaceSDK}",
 		"%{prj.name}/vendor/GStreamer/include",
 		"%{prj.name}/vendor/GStreamer/include/glib-2.0",
 		"%{prj.name}/vendor/GStreamer/include/gstreamer-1.0",
@@ -94,14 +100,13 @@ project "ASSInterface"
 		"%{prj.name}/vendor/mongo-c-driver/include/libmongoc-1.0",
 		"%{prj.name}/vendor/mongo-c-driver/include/libbson-1.0",
 		"%{prj.name}/vendor/mongo-cxx-driver/install/include/bsoncxx/v_noabi",
-		"%{prj.name}/vendor/mongo-cxx-driver/install/include/mongocxx/v_noabi"
+		"%{prj.name}/vendor/mongo-cxx-driver/install/include/mongocxx/v_noabi"		
 	}
 
 	libdirs 
 	{ 
 		"ASSInterface/vendor/opencv/x64/vc16/lib",
-		"ASSInterface/vendor/TBB/lib",
-		"ASSInterface/vendor/cpprestsdk/lib"
+		"ASSInterface/vendor/TBB/lib"
 	}
 
 	links
@@ -116,7 +121,10 @@ project "ASSInterface"
 		"ASSInterface/vendor/GStreamer/lib/gstreamer-1.0.lib",
 		"ASSInterface/vendor/GStreamer/lib/gstapp-1.0.lib",
 		"ASSInterface/vendor/mongo-cxx-driver/install/lib/bsoncxx.lib",
-		"ASSInterface/vendor/mongo-cxx-driver/install/lib/mongocxx.lib"		
+		"ASSInterface/vendor/mongo-cxx-driver/install/lib/mongocxx.lib",
+		"ASSInterface/vendor/CUDA/lib/cudart_static.lib",
+		"ASSInterface/vendor/Innovatrics/IDKitSDK/lib/idkit.lib",
+		"ASSInterface/vendor/Innovatrics/IFaceSDK/lib/iface.lib"
 	}
 
 	filter "system:windows"				
@@ -132,33 +140,30 @@ project "ASSInterface"
 	filter "configurations:Debug"
 		defines "ASS_DEBUG"
 		runtime "Debug"
-		symbols "on"
+		symbols "on"		
 
 		links
-		{			
-			"ASSInterface/vendor/cpprestsdk/lib/cpprest142_2_10d.lib",
+		{						
 			"ASSInterface/vendor/TBB/lib/tbb12_debug.lib"
 		}
 
 	filter "configurations:Release"
 		defines "ASS_RELEASE"
 		runtime "Release"
-		optimize "on"
+		optimize "on"		
 
 		links
-		{			
-			"ASSInterface/vendor/cpprestsdk/lib/cpprest142_2_10.lib",
+		{						
 			"ASSInterface/vendor/TBB/lib/tbb12.lib"
 		}
 
 	filter "configurations:Dist"
 		defines "ASS_DIST"
 		runtime "Release"
-		optimize "on"
+		optimize "on"		
 
 		links
-		{			
-			"ASSInterface/vendor/cpprestsdk/lib/cpprest142_2_10.lib",
+		{						
 			"ASSInterface/vendor/TBB/lib/tbb12.lib"
 		}
 
@@ -185,7 +190,7 @@ project "Sandbox"
 
 	includedirs
 	{
-		"ASSInterface/vendor/spdlog/include",
+		"ASSInterface/vendor/spdlog/include",		
 		"ASSInterface/src",
 		"ASSInterface/vendor",
 		"%{IncludeDir.glm}",
@@ -193,7 +198,9 @@ project "Sandbox"
 		"%{IncludeDir.Rx}",
 		"%{IncludeDir.JSONCPP}",
 		"%{IncludeDir.TBB}",
-		"%{IncludeDir.cpprestsdk}",
+		"%{IncludeDir.CUDA}",
+		"%{IncludeDir.IDKitSDK}",
+		"%{IncludeDir.IFaceSDK}",
 		"ASSInterface/vendor/opencv/include"
 	}	
 
@@ -214,8 +221,7 @@ project "Sandbox"
 		{
 			"ASSInterface/vendor/opencv/x64/vc16/lib/opencv_world451d.lib",
 			"ASSInterface/vendor/TBB/lib/tbb_debug.lib",
-			"ASSInterface/vendor/TBB/lib/tbb12_debug.lib",
-			"ASSInterface/vendor/cpprestsdk/lib/cpprest142_2_10d.lib"
+			"ASSInterface/vendor/TBB/lib/tbb12_debug.lib"
 		}
 
 	filter "configurations:Release"
@@ -227,8 +233,7 @@ project "Sandbox"
 		{
 			"ASSInterface/vendor/opencv/x64/vc16/lib/opencv_world451.lib",
 			"ASSInterface/vendor/TBB/lib/tbb.lib",
-			"ASSInterface/vendor/TBB/lib/tbb12.lib",
-			"ASSInterface/vendor/cpprestsdk/lib/cpprest142_2_10.lib"
+			"ASSInterface/vendor/TBB/lib/tbb12.lib"
 		}
 
 	filter "configurations:Dist"
@@ -240,6 +245,5 @@ project "Sandbox"
 		{
 			"ASSInterface/vendor/opencv/x64/vc16/lib/opencv_world451.lib",
 			"ASSInterface/vendor/TBB/lib/tbb.lib",
-			"ASSInterface/vendor/TBB/lib/tbb12.lib",
-			"ASSInterface/vendor/cpprestsdk/lib/cpprest142_2_10d.lib"
+			"ASSInterface/vendor/TBB/lib/tbb12.lib"
 		}

@@ -24,6 +24,7 @@ namespace ASSInterface {
 		int discoveryFrequenceMS = 2000;
 		bool deepTrack = true;
 		int countRedetectTimeDelta = 10000;
+		int confidenceThreshold = 600;
 
 		const std::string FACE_DISCOVERY_FREQUENCE_MS = "TRACK_FACE_DISCOVERY_FREQUENCE_MS";
 		const std::string COUNT_REDETECT_TIME_DELTA = "COUNT_REDETECT_TIME_DELTA";
@@ -31,6 +32,7 @@ namespace ASSInterface {
 		const std::string TRACK_SPEED_ACCURACY_MODE = "TRACK_SPEED_ACCURACY_MODE";
 		const std::string TRACK_MOTION_OPTIMIZATION = "TRACK_MOTION_OPTIMIZATION";
 		const std::string TRACK_DEEP_TRACK = "TRACK_DEEP_TRACK";
+		const std::string TRACK_CONFIDENCE_THRESHOLD = "TRACK_CONFIDENCE_THRESHOLD";
 
 		mutable std::unordered_map<std::string, std::any> paramsTrack;
 		ASSInterface::Ref<ASSInterface::File> managerFile;
