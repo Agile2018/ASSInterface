@@ -13,6 +13,8 @@ ASSInterface/vendor/Rx/
 ASSInterface/vendor/TBB/
 ASSInterface/vendor/CUDA/
 ASSInterface/vendor/Innovatrics/
+ASSInterface/vendor/imgui/
+ASSInterface/vendor/websocketpp/
 # Files
 *.user
 **.sln

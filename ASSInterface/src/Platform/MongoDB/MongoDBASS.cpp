@@ -51,6 +51,8 @@ namespace ASSInterface {
 				kvp("date", ent.date),
 				kvp("identification", ent.identification.c_str()),
 				kvp("type", ent.type.c_str()),
+				kvp("type1", ent.type1.c_str()),
+				kvp("type2", ent.type2.c_str()),
 				kvp("log_enroll", ent.logEnroll.c_str()),
 				kvp("log_entry", ent.logEntry.c_str()),
 				kvp("doc_obverse", ent.dataDocObverse.c_str()),
@@ -71,6 +73,7 @@ namespace ASSInterface {
 	{
 		try
 		{
+			
 			auto clientConnection = MongoAccess::instance().GetConnection();
 
 			mongocxx::database database = (*clientConnection)[nameDatabase.c_str()];
@@ -79,25 +82,19 @@ namespace ASSInterface {
 
 			bsoncxx::document::value builder = make_document(
 				kvp("id_face", ent.id.c_str()),
-				kvp("data1", ent.data1.c_str()),
-				kvp("data2", ent.data2.c_str()),
-				kvp("data3", ent.data3.c_str()),
-				kvp("data4", ent.data4.c_str()),
-				kvp("data5", ent.data5.c_str()),
-				kvp("data6", ent.data6.c_str()),
-				kvp("data7", ent.data7.c_str()),
-				kvp("data8", ent.data8.c_str()),
-				kvp("data9", ent.data9.c_str()),
-				kvp("data10", ent.data10.c_str()));
+				kvp("data", ent.data.c_str()),				
+				kvp("index", ent.index));
 
 			bsoncxx::stdx::optional<mongocxx::result::insert_one> result = collection.insert_one(std::move(builder));
-
+			
 		}
 		catch (const mongocxx::exception& e)
 		{
 			ASS_ERROR("Error Mongo Add: {0}", e.what());
 			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Add", e.what());
 		}
+
+		
 	}
 
 	void MongoDBASS::Add(const EntityEvent& ent)
@@ -174,15 +171,13 @@ namespace ASSInterface {
 					.update_one(make_document(kvp("id_face", ent.id.c_str())),
 						make_document(kvp("$set",
 							make_document(kvp("name", ent.name.c_str()),
-								kvp("lastname", ent.lastName.c_str()),
-								kvp("date", ent.date),
+								kvp("lastname", ent.lastName.c_str()),								
 								kvp("identification", ent.identification.c_str()),
-								kvp("type", ent.type.c_str()),
-								kvp("log_enroll", ent.logEnroll.c_str()),
-								kvp("log_entry", ent.logEntry.c_str()),
 								kvp("doc_obverse", ent.dataDocObverse.c_str()),
 								kvp("doc_reverse", ent.dataDocReverse.c_str()),
-								kvp("image", ent.dataImage.c_str())))));
+								kvp("type", ent.type.c_str()),
+								kvp("type1", ent.type1.c_str()),
+								kvp("type2", ent.type2.c_str())))));
 			}
 			catch (const mongocxx::exception& e)
 			{
@@ -213,21 +208,47 @@ namespace ASSInterface {
 
 			try
 			{
-
 				bsoncxx::stdx::optional<mongocxx::v_noabi::result::update> result = collection
-					.update_one(make_document(kvp("id_face", ent.id.c_str())),
+					.update_one(make_document(kvp("id_face", ent.id.c_str()), kvp("index", ent.index)),
 						make_document(kvp("$set",
 							make_document(
-								kvp("data1", ent.data1.c_str()),
-								kvp("data2", ent.data2.c_str()),
-								kvp("data3", ent.data3.c_str()),
-								kvp("data4", ent.data4.c_str()),
-								kvp("data5", ent.data5.c_str()),
-								kvp("data6", ent.data6.c_str()),
-								kvp("data7", ent.data7.c_str()),
-								kvp("data8", ent.data8.c_str()),
-								kvp("data9", ent.data9.c_str()),
-								kvp("data10", ent.data10.c_str())))));
+								kvp("data", ent.data.c_str())))));				
+
+			}
+			catch (const mongocxx::exception& e)
+			{
+				ASS_ERROR("Error Mongo Update: {0}", e.what());
+				ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Update", e.what());
+			}
+		}
+		else
+		{
+			ASS_ERROR("Error collections not created");
+			const char* err = "Error collections not created";
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Update", err);
+		}
+	}
+
+	void MongoDBASS::Update(const EntityImage& ent, int newIndex)
+	{
+		auto clientConnection = MongoAccess::instance().GetConnection();
+
+		mongocxx::database database = (*clientConnection)[nameDatabase.c_str()];
+
+		auto cursor = database.list_collections();
+
+		if (cursor.begin() != cursor.end())
+		{
+			mongocxx::collection collection = database[COLLECTION_IMAGES.c_str()];
+
+			try
+			{
+				bsoncxx::stdx::optional<mongocxx::v_noabi::result::update> result = collection
+					.update_one(make_document(kvp("id_face", ent.id.c_str()), kvp("index", ent.index)),
+						make_document(kvp("$set",
+							make_document(
+								kvp("index", newIndex)))));
+
 			}
 			catch (const mongocxx::exception& e)
 			{
@@ -375,7 +396,7 @@ namespace ASSInterface {
 				bsoncxx::document::value builder = make_document(
 					kvp("id_face", id.c_str()));
 
-				boost::optional<mongocxx::v_noabi::result::delete_result> result = collection.delete_one(std::move(builder));
+				boost::optional<mongocxx::v_noabi::result::delete_result> result = collection.delete_many(std::move(builder));
 
 				if (result) {
 					ASS_INFO("Records delete: {0}", result->deleted_count());
@@ -392,6 +413,42 @@ namespace ASSInterface {
 			ASS_ERROR("Error collections not created");
 			const char* err = "Error collections not created";
 			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::DeleteImages", err);
+		}
+	}
+
+	void MongoDBASS::DeleteImage(const EntityImage& ent)
+	{
+		auto clientConnection = MongoAccess::instance().GetConnection();
+
+		mongocxx::database database = (*clientConnection)[nameDatabase.c_str()];
+
+		auto cursor = database.list_collections();
+
+		if (cursor.begin() != cursor.end())
+		{
+			mongocxx::collection collection = database[COLLECTION_IMAGES.c_str()];
+
+			try
+			{
+				bsoncxx::document::value builder = make_document(kvp("id_face", ent.id.c_str()), kvp("index", ent.index));
+				boost::optional<mongocxx::v_noabi::result::delete_result> result = collection.delete_one(std::move(builder));
+
+				if (result) {
+					ASS_INFO("Records delete: {0}", result->deleted_count());
+				}
+
+			}
+			catch (const mongocxx::exception& e)
+			{
+				ASS_ERROR("Error Mongo Update: {0}", e.what());
+				ASS_ERROR_PROFILE_SCOPE("MongoDBASS::DeleteImage", e.what());
+			}
+		}
+		else
+		{
+			ASS_ERROR("Error collections not created");
+			const char* err = "Error collections not created";
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::DeleteImage", err);
 		}
 	}
 
@@ -497,6 +554,8 @@ namespace ASSInterface {
 						m_EntitySpec.identification = view["identification"].get_utf8().value.to_string();
 						m_EntitySpec.dataImage = view["image"].get_utf8().value.to_string();
 						m_EntitySpec.type = view["type"].get_utf8().value.to_string();
+						m_EntitySpec.type1 = view["type1"].get_utf8().value.to_string();
+						m_EntitySpec.type2 = view["type2"].get_utf8().value.to_string();
 						m_EntitySpec.logEnroll = view["log_enroll"].get_utf8().value.to_string();
 						m_EntitySpec.logEntry = view["log_entry"].get_utf8().value.to_string();
 						m_EntitySpec.date = view["date"].get_int32().value;
@@ -527,6 +586,166 @@ namespace ASSInterface {
 		}
 		
 	}
+	void MongoDBASS::GetByType(const std::string type)
+	{
+		entities.clear();
+		auto clientConnection = MongoAccess::instance().GetConnection();
+
+		mongocxx::database database = (*clientConnection)[nameDatabase.c_str()];
+
+		auto cursorCheck = database.list_collections();
+
+		if (cursorCheck.begin() != cursorCheck.end()) {
+
+			try
+			{
+				mongocxx::collection collection = database[COLLECTION_PERSON.c_str()];
+
+				mongocxx::cursor result = collection
+					.find(make_document(kvp("type", type.c_str())));
+
+				for (auto view : result) {
+					EntitySpecification ent;
+				
+					ent.id = view["id_face"].get_utf8().value.to_string();
+					ent.name = view["name"].get_utf8().value.to_string();
+					ent.identification = view["identification"].get_utf8().value.to_string();
+					ent.dataImage = view["image"].get_utf8().value.to_string();
+					ent.type = view["type"].get_utf8().value.to_string();
+					ent.type1 = view["type1"].get_utf8().value.to_string();
+					ent.logEnroll = view["log_enroll"].get_utf8().value.to_string();
+					ent.logEntry = view["log_entry"].get_utf8().value.to_string();
+					ent.date = view["date"].get_int32().value;
+					ent.lastName = view["lastname"].get_utf8().value.to_string();
+					ent.dataDocObverse = view["doc_obverse"].get_utf8()
+						.value.to_string();
+					ent.dataDocReverse = view["doc_reverse"].get_utf8()
+						.value.to_string();
+
+					entities.push_back(ent);
+				}
+				
+			}
+			catch (const mongocxx::exception& e)
+			{
+				ASS_ERROR("Error Mongo Get Entity: {0}", e.what());
+				ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Get", e.what());
+			}
+		}
+		else
+		{
+			ASS_ERROR("Error collections not created");
+			const char* err = "Error collections not created";
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Get", err);
+		}
+	}
+	void MongoDBASS::GetByName(const std::string name)
+	{
+		entities.clear();
+		auto clientConnection = MongoAccess::instance().GetConnection();
+
+		mongocxx::database database = (*clientConnection)[nameDatabase.c_str()];
+
+		auto cursorCheck = database.list_collections();
+
+		if (cursorCheck.begin() != cursorCheck.end()) {
+
+			try
+			{
+				mongocxx::collection collection = database[COLLECTION_PERSON.c_str()];
+
+				mongocxx::cursor result = collection
+					.find(make_document(kvp("name", name.c_str())));
+
+				for (auto view : result) {
+					EntitySpecification ent;
+
+					ent.id = view["id_face"].get_utf8().value.to_string();
+					ent.name = view["name"].get_utf8().value.to_string();
+					ent.identification = view["identification"].get_utf8().value.to_string();
+					ent.dataImage = view["image"].get_utf8().value.to_string();
+					ent.type = view["type"].get_utf8().value.to_string();
+					ent.type1 = view["type1"].get_utf8().value.to_string();
+					ent.logEnroll = view["log_enroll"].get_utf8().value.to_string();
+					ent.logEntry = view["log_entry"].get_utf8().value.to_string();
+					ent.date = view["date"].get_int32().value;
+					ent.lastName = view["lastname"].get_utf8().value.to_string();
+					ent.dataDocObverse = view["doc_obverse"].get_utf8()
+						.value.to_string();
+					ent.dataDocReverse = view["doc_reverse"].get_utf8()
+						.value.to_string();
+
+					entities.push_back(ent);
+				}
+
+			}
+			catch (const mongocxx::exception& e)
+			{
+				ASS_ERROR("Error Mongo Get Entity: {0}", e.what());
+				ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Get", e.what());
+			}
+		}
+		else
+		{
+			ASS_ERROR("Error collections not created");
+			const char* err = "Error collections not created";
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Get", err);
+		}
+	}
+	void MongoDBASS::GetByLastName(const std::string lastName)
+	{
+		entities.clear();
+		auto clientConnection = MongoAccess::instance().GetConnection();
+
+		mongocxx::database database = (*clientConnection)[nameDatabase.c_str()];
+
+		auto cursorCheck = database.list_collections();
+
+		if (cursorCheck.begin() != cursorCheck.end()) {
+
+			try
+			{
+				mongocxx::collection collection = database[COLLECTION_PERSON.c_str()];
+
+				mongocxx::cursor result = collection
+					.find(make_document(kvp("lastname", lastName.c_str())));
+
+				for (auto view : result) {
+					EntitySpecification ent;
+
+					ent.id = view["id_face"].get_utf8().value.to_string();
+					ent.name = view["name"].get_utf8().value.to_string();
+					ent.identification = view["identification"].get_utf8().value.to_string();
+					ent.dataImage = view["image"].get_utf8().value.to_string();
+					ent.type = view["type"].get_utf8().value.to_string();
+					ent.type1 = view["type1"].get_utf8().value.to_string();
+					ent.logEnroll = view["log_enroll"].get_utf8().value.to_string();
+					ent.logEntry = view["log_entry"].get_utf8().value.to_string();
+					ent.date = view["date"].get_int32().value;
+					ent.lastName = view["lastname"].get_utf8().value.to_string();
+					ent.dataDocObverse = view["doc_obverse"].get_utf8()
+						.value.to_string();
+					ent.dataDocReverse = view["doc_reverse"].get_utf8()
+						.value.to_string();
+
+					entities.push_back(ent);
+				}
+
+			}
+			catch (const mongocxx::exception& e)
+			{
+				ASS_ERROR("Error Mongo Get Entity: {0}", e.what());
+				ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Get", e.what());
+			}
+		}
+		else
+		{
+			ASS_ERROR("Error collections not created");
+			const char* err = "Error collections not created";
+			ASS_ERROR_PROFILE_SCOPE("MongoDBASS::Get", err);
+		}
+	
+	}
 	void MongoDBASS::GetByDocument(const std::string document)
 	{
 		auto clientConnection = MongoAccess::instance().GetConnection();
@@ -555,6 +774,7 @@ namespace ASSInterface {
 						m_EntitySpec.identification = view["identification"].get_utf8().value.to_string();
 						m_EntitySpec.dataImage = view["image"].get_utf8().value.to_string();
 						m_EntitySpec.type = view["type"].get_utf8().value.to_string();
+						m_EntitySpec.type1 = view["type1"].get_utf8().value.to_string();
 						m_EntitySpec.logEnroll = view["log_enroll"].get_utf8().value.to_string();
 						m_EntitySpec.logEntry = view["log_entry"].get_utf8().value.to_string();
 						m_EntitySpec.date = view["date"].get_int32().value;
@@ -586,6 +806,8 @@ namespace ASSInterface {
 	}
 	void MongoDBASS::GetImages(const std::string id)
 	{
+		entitiesImage.clear();
+
 		auto clientConnection = MongoAccess::instance().GetConnection();
 
 		mongocxx::database database = (*clientConnection)[nameDatabase.c_str()];
@@ -598,28 +820,17 @@ namespace ASSInterface {
 			{
 				mongocxx::collection collection = database[COLLECTION_IMAGES.c_str()];
 
-				boost::optional<bsoncxx::v_noabi::document::value> cursor = collection
-					.find_one(make_document(kvp("id_face", id.c_str())));
+				mongocxx::cursor result = collection
+					.find(make_document(kvp("id_face", id.c_str())));
 
-				if (cursor)
-				{
-					auto view = (*cursor).view();
+				for (auto view : result) {
+					EntityImage ent;
 
-					if (!view.empty()) {
+					ent.id = view["id_face"].get_utf8().value.to_string();
+					ent.data = view["data"].get_utf8().value.to_string();
+					ent.index = view["index"].get_int32().value;
 
-						m_EntityImage.id = view["id_face"].get_utf8().value.to_string();
-						m_EntityImage.data1 = view["data1"].get_utf8().value.to_string();
-						m_EntityImage.data2 = view["data2"].get_utf8().value.to_string();
-						m_EntityImage.data3 = view["data3"].get_utf8().value.to_string();
-						m_EntityImage.data4 = view["data4"].get_utf8().value.to_string();
-						m_EntityImage.data5 = view["data5"].get_utf8().value.to_string();
-						m_EntityImage.data6 = view["data6"].get_utf8().value.to_string();
-						m_EntityImage.data7 = view["data7"].get_utf8().value.to_string();
-						m_EntityImage.data8 = view["data8"].get_utf8().value.to_string();
-						m_EntityImage.data9 = view["data9"].get_utf8().value.to_string();
-						m_EntityImage.data10 = view["data10"].get_utf8().value.to_string();
-
-					}
+					entitiesImage.push_back(ent);
 				}
 			}
 			catch (const mongocxx::exception& e)
@@ -755,6 +966,5 @@ namespace ASSInterface {
 		connection = std::any_cast<std::string>(anyCnn);
 		nameDatabase = std::any_cast<std::string>(anyDb);
 	}
-
 
 }

@@ -21,6 +21,7 @@ private:
 	void ShowDetected(int index);
 	void SetNewsDetected();
 	void SaveEventTrack(PersonSpecification& personSpec);
+	void SaveEventTrackUnidentified(PersonSpecification& personSpec);
 private:
 	Rx::subject<std::tuple<int, int>> channelSubject;
 	Rx::observable<std::tuple<int, int>> observableCurrentChannel = channelSubject.get_observable();

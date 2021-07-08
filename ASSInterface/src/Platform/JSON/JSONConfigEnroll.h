@@ -27,6 +27,7 @@ namespace ASSInterface {
 		int concatenateMode = 1;
 		int minScore = 50;
 		int maxScore = 90;
+		int duration = 30;
 
 		const std::string CFG_IFACE_DETECTION_THRESHOLD = "CFG_IFACE_DETECTION_THRESHOLD";
 		const std::string CFG_SIMILARITY_THRESHOLD = "CFG_SIMILARITY_THRESHOLD";
@@ -37,6 +38,7 @@ namespace ASSInterface {
 		const std::string AFACE_CONCATENATE_MODE = "AFACE_CONCATENATE_MODE";
 		const std::string AFACE_MIN_SCORE = "AFACE_MIN_SCORE";
 		const std::string AFACE_MAX_SCORE = "AFACE_MAX_SCORE";
+		const std::string AFACE_DURATION = "AFACE_DURATION";
 
 		mutable std::unordered_map<std::string, std::any> paramsEnroll;
 		ASSInterface::Ref<ASSInterface::File> managerFile;

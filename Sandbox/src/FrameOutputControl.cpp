@@ -144,6 +144,9 @@ void FrameOutputControl::SaveEventOutside(int index)
 	entEvent.date = ASSInterface::DateTime::NowToLong();
 	entEvent.type = ASSInterface::EventAppType::outside;
 	entEvent.description = "The person leaves the premises.";
+	int id = atoi(entEvent.id.c_str());
 
 	dbMongo->Add(entEvent);
+
+	shootPersonOutside.on_next(id);
 }

@@ -13,6 +13,7 @@ struct PersonSpecification {
 	char place[30] = "";
 	char channel[2] = "";
 	char type[20] = "";
+	char type1[20] = "";
 	uint32_t txtCapture = 0;
 	uint32_t txtGallery = 0;
 	uint32_t txtDocumentObverse = 0;
@@ -22,8 +23,10 @@ struct PersonSpecification {
 	std::vector<unsigned char> bufferDocumentObverse;
 	std::vector<unsigned char> bufferDocumentReverse;
 	std::vector<char> templateFace;
+	std::vector<char> faceSerialized;
 	int size = 0;
 	int cropWidth = 0;
 	int cropHeight = 0;	
 	int task = -1;
+	int templates = 0;
 };

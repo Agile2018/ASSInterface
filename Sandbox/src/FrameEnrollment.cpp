@@ -8,6 +8,7 @@ FrameEnrollment::FrameEnrollment(ASSInterface::LanguageType language)
 {
 	lg = language;
 	base64 = ASSInterface::Base64::Create();	
+	transImage = ASSInterface::TransformImage::Create();	
 	txtButtonCapture = ASSInterface::Texture2D::Create("assets/textures/camera.png");
 	txtButtonDelete = ASSInterface::Texture2D::Create("assets/textures/delete.png");	
 }
@@ -36,6 +37,7 @@ void FrameEnrollment::Show(bool* p_open, PersonSpecification& personSpec)
 	ImGuiTabItemFlags_ flagTab3 = ImGuiTabItemFlags_None;
 	ImGuiTabItemFlags_ flagTab4 = ImGuiTabItemFlags_None;
 	static bool popup_open = false;
+	static bool popup_open_doc = false;
 	static bool popup_file_open = false;
 	/*if (currentIndexVideo == 0 && !*viewVideo[0]) currentIndexVideo = -1;
 	if (currentIndexVideo == 1 && !*viewVideo[1]) currentIndexVideo = -1;*/
@@ -89,6 +91,7 @@ void FrameEnrollment::Show(bool* p_open, PersonSpecification& personSpec)
 			ImGui::SetCursorPos(ImVec2((viewportPanelSize.x - 100.0f), 190.0f));
 			if (ImGui::Button("Next...")) {				
 				flagTab2 = ImGuiTabItemFlags_SetSelected;
+				
 			}
 
 			ImGui::EndTabItem();
@@ -97,7 +100,7 @@ void FrameEnrollment::Show(bool* p_open, PersonSpecification& personSpec)
 		if (ImGui::BeginTabItem("Capture Images", 0, flagTab2)) {
 			ImGui::SetCursorPos(ImVec2((viewportPanelSize.x - 250.0f) * 0.5f, 60.0f));
 			SetTextureNewDetected();
-			ImGui::Image((void*)personSpecificationEnrollComplete.txtCapture,
+			ImGui::Image(reinterpret_cast<void*>(intptr_t(personSpecificationEnrollComplete.txtCapture)),
 				ImVec2{ 120.0f, 149.0f });
 			ImGui::SameLine();
 			ImGui::BeginGroup();
@@ -120,7 +123,7 @@ void FrameEnrollment::Show(bool* p_open, PersonSpecification& personSpec)
 			if (ImGui::Button("File")) {
 				if (!isVideoButton)
 				{
-					isFileButton = true;
+					
 					if (currentIndexVideo == -1)
 					{
 						popup_file_open = true;
@@ -136,11 +139,8 @@ void FrameEnrollment::Show(bool* p_open, PersonSpecification& personSpec)
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Camera")) {
-				if (!isFileButton)
-				{					
-					popup_open = true;
-					ImGui::SetNextWindowPos(ImGui::GetMousePos());
-				}
+				popup_open = true;
+				ImGui::SetNextWindowPos(ImGui::GetMousePos());
 				
 			}
 
@@ -203,7 +203,9 @@ void FrameEnrollment::Show(bool* p_open, PersonSpecification& personSpec)
 						{							
 							*messageStatus = "";
 							currentIndexVideo = i + 1;
-							ClearTask();
+							//isFileButton = true;
+							//ClearTask();
+							shootChannel.on_next(currentIndexVideo - 1);
 							CreateTaskEnroll(currentIndexVideo);
 							OpenFile();
 
@@ -244,6 +246,23 @@ void FrameEnrollment::Show(bool* p_open, PersonSpecification& personSpec)
 				flagTab3 = ImGuiTabItemFlags_SetSelected;
 			}
 
+			ImGui::Separator();
+
+			ImGui::BeginChild("Templates", ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::Columns(5);
+
+			for (size_t i = 0; i < listDetected.size(); i++)
+			{
+				ImGui::Image(reinterpret_cast<void*>(intptr_t(listDetected[i].txtCapture)),
+					ImVec2{ 80.0f, 100.0f });
+				ImGui::NextColumn();
+			}
+
+
+			ImGui::Columns();
+
+			ImGui::EndChild();
+
 			ImGui::EndTabItem();
 		}
 
@@ -254,21 +273,91 @@ void FrameEnrollment::Show(bool* p_open, PersonSpecification& personSpec)
 			ImGui::Text("Reverse"); 
 			ImGui::SetCursorPos(ImVec2((viewportPanelSize.x - 420.0f) * 0.5f, 90.0f));
 			SetTextureDocument();
+			
 			if (ImGui::ImageButton((void*)personSpecificationEnrollComplete.txtDocumentObverse,
 				ImVec2{ 200.0f, 115.0f })) {
 				personSpecificationEnrollComplete.txtDocumentObverse = 0;
-				shootRequireObverse.on_next(currentIndexVideo - 1);
+				if (currentIndexVideoDoc != -1)
+				{
+					shootRequireObverse.on_next(currentIndexVideoDoc - 1);
+				}
+				else
+				{
+					*messageStatus = "Select channel.";
+				}
+				
 			}
 			
 			ImGui::SameLine();
 			if (ImGui::ImageButton((void*)personSpecificationEnrollComplete.txtDocumentReverse,
 				ImVec2{ 200.0f, 115.0f })) {
 				personSpecificationEnrollComplete.txtDocumentReverse = 0;
-				shootRequireReverse.on_next(currentIndexVideo - 1);
+				if (currentIndexVideoDoc != -1)
+				{
+					shootRequireReverse.on_next(currentIndexVideoDoc - 1);
+				}
+				else
+				{
+					*messageStatus = "Select channel.";
+				}
+				
 			}
 
+			ImGui::Spacing();
+
+			ImGui::Text("Document face:"); ImGui::SameLine();
+			ImGui::RadioButton("Obverse", &docFace, 1); ImGui::SameLine();
+			ImGui::RadioButton("Reverse", &docFace, 2); ImGui::SameLine();
+			if (ImGui::Button("File")) {
+				OpenFileDocument();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Camera")) {
+				popup_open_doc = true;
+				ImGui::SetNextWindowPos(ImGui::GetMousePos());
+			}
+
+			if (popup_open_doc)
+			{
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+				ImGui::Begin("##Popupdoc", &popup_open_doc, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
+
+				if (!ImGui::IsWindowFocused())
+					popup_open_doc = false;
+
+				for (int i = 0; i < IM_ARRAYSIZE(ConstantApplication::QUANTITY_CHANNELS); i++) {
+
+					bool is_selected = (currentChannelDoc == ConstantApplication::QUANTITY_CHANNELS[i]);
+
+					if (ImGui::Selectable(ConstantApplication::QUANTITY_CHANNELS[i], is_selected))
+					{
+						currentChannelDoc = ConstantApplication::QUANTITY_CHANNELS[i];
+						ImGui::SetItemDefaultFocus();
+						if (!*viewVideo[i])
+						{
+							*messageStatus = "";
+							*viewVideo[i] = true;
+							currentIndexVideoDoc = i + 1;
+							ClearTask();
+							
+						}
+						else
+						{
+							*messageStatus = "The channel is busy.";
+						}
+						popup_open_doc = false;
+					}
+
+				}
+
+				ImGui::End();
+				ImGui::PopStyleVar();
+
+			}
+
+
 			ImGui::Separator();
-			ImGui::SetCursorPos(ImVec2((viewportPanelSize.x - 100.0f), 220.0f));
+			ImGui::SetCursorPos(ImVec2((viewportPanelSize.x - 100.0f), 260.0f));
 			if (ImGui::Button("Next...")) {
 				flagTab4 = ImGuiTabItemFlags_SetSelected;
 			}
@@ -302,7 +391,7 @@ void FrameEnrollment::Show(bool* p_open, PersonSpecification& personSpec)
 			ImGui::Spacing();
 			if (ImGui::Button("Save")) {
 				if (SavePerson()) {
-					CleanSpecification(1);
+					CleanSpecification();
 					shootCloseConnection.on_next(true);
 				}
 			}
@@ -319,6 +408,7 @@ void FrameEnrollment::Show(bool* p_open, PersonSpecification& personSpec)
 void FrameEnrollment::ShowRAV(bool* p_open, PersonSpecification& personSpec)
 {
 	static const char* current_place = NULL;
+	static bool popup_open_doc = false;
 	std::string dateEnroll = ASSInterface::DateTime::Now();
 	strcpy(personSpecificationEnroll.date, dateEnroll.c_str());
 	isEnrollRAV = true;
@@ -350,31 +440,103 @@ void FrameEnrollment::ShowRAV(bool* p_open, PersonSpecification& personSpec)
 	strcpy(personSpecificationEnroll.type, ConstantApplication::TYPES_PERSON[0]);
 	ImGui::Spacing();
 	ImGui::Separator();
+
 	SetTextureDocument();
+
 	ImGui::SetCursorPos(ImVec2((viewportPanelSize.x - 200.0f) * 0.5f, 315.0f));	
 	if (ImGui::ImageButton((void*)personSpecificationEnroll.txtDocumentObverse, 
 		ImVec2{ 200.0f, 115.0f })) {
-		personSpecificationEnroll.txtDocumentObverse = 0;		
-		shootRequireObverse.on_next(atoi(personSpecificationEnroll.channel) - 1);
+		personSpecificationEnroll.txtDocumentObverse = 0;	
+		if (currentIndexVideoDoc != -1)
+		{
+			shootRequireObverse.on_next(currentIndexVideoDoc - 1);
+		}
+		else
+		{
+			*messageStatus = "Select channel.";
+		}
+		
 	}
 	ImGui::Spacing();
 	ImGui::SetCursorPos(ImVec2((viewportPanelSize.x - 200.0f) * 0.5f, 445.0f));
 	if (ImGui::ImageButton((void*)personSpecificationEnroll.txtDocumentReverse, 
 		ImVec2{ 200.0f, 115.0f })) {		
 		personSpecificationEnroll.txtDocumentReverse = 0;
-		shootRequireReverse.on_next(atoi(personSpecificationEnroll.channel) - 1);
+		if (currentIndexVideoDoc != -1)
+		{
+			shootRequireReverse.on_next(currentIndexVideoDoc - 1);
+		}
+		else
+		{
+			*messageStatus = "Select channel.";
+		}
+		
 	}
+
+	ImGui::Spacing();
+
+	ImGui::Text("Document face:"); ImGui::SameLine();
+	ImGui::RadioButton("Obverse", &docFace, 1); ImGui::SameLine();
+	ImGui::RadioButton("Reverse", &docFace, 2); ImGui::SameLine();
+	if (ImGui::Button("File")) {
+		OpenFileDocument();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Camera")) {
+		popup_open_doc = true;
+		ImGui::SetNextWindowPos(ImGui::GetMousePos());
+	}
+
+	if (popup_open_doc)
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::Begin("##Popupdoc", &popup_open_doc, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize);
+
+		if (!ImGui::IsWindowFocused())
+			popup_open_doc = false;
+
+		for (int i = 0; i < IM_ARRAYSIZE(ConstantApplication::QUANTITY_CHANNELS); i++) {
+
+			bool is_selected = (currentChannelDoc == ConstantApplication::QUANTITY_CHANNELS[i]);
+
+			if (ImGui::Selectable(ConstantApplication::QUANTITY_CHANNELS[i], is_selected))
+			{
+				currentChannelDoc = ConstantApplication::QUANTITY_CHANNELS[i];
+				ImGui::SetItemDefaultFocus();
+				if (!*viewVideo[i])
+				{
+					*messageStatus = "";
+					*viewVideo[i] = true;
+					currentIndexVideoDoc = i + 1;
+					//ClearTask();
+
+				}
+				else
+				{
+					*messageStatus = "The channel is busy.";
+				}
+				popup_open_doc = false;
+			}
+
+		}
+
+		ImGui::End();
+		ImGui::PopStyleVar();
+
+	}
+
+
 	ImGui::Spacing();
 	ImGui::Separator();
 
-	ImGui::SetCursorPos(ImVec2((viewportPanelSize.x - 150.0f) * 0.5f, 580.0f));
+	ImGui::SetCursorPos(ImVec2((viewportPanelSize.x - 150.0f) * 0.5f, 610.0f));
 	if (ImGui::Button("Save Register", ImVec2(150.0f, 25.0f))) {
 		std::string autorized = "Not autorized";
 		strcpy(personSpecificationEnroll.state, autorized.c_str());
 		if (SavePerson(personSpec)) SaveEventRegister(personSpec);
 	}
 	
-	ImGui::SetCursorPos(ImVec2((viewportPanelSize.x - 243.0f) * 0.5f , 610.0f));
+	ImGui::SetCursorPos(ImVec2((viewportPanelSize.x - 243.0f) * 0.5f , 640.0f));
 	ImGui::Text("Place:"); ImGui::SameLine();
 	if (ImGui::BeginCombo("##combo", personSpecificationEnroll.place)) {
 		for (int n = 0; n < IM_ARRAYSIZE(ConstantApplication::DESTINATION_PLACES); n++) {
@@ -388,7 +550,7 @@ void FrameEnrollment::ShowRAV(bool* p_open, PersonSpecification& personSpec)
 		ImGui::EndCombo();
 	}
 	
-	ImGui::SetCursorPos(ImVec2((viewportPanelSize.x - 150.0f) * 0.5f, 640.0f));
+	ImGui::SetCursorPos(ImVec2((viewportPanelSize.x - 150.0f) * 0.5f, 670.0f));
 	if (ImGui::Button("Authorize entry", ImVec2(150.0f, 25.0f))) {
 		std::string autorized = "Autorized";
 		strcpy(personSpecificationEnroll.state, autorized.c_str());
@@ -411,22 +573,35 @@ bool FrameEnrollment::SavePerson(PersonSpecification& personSpec) {
 
 	if (!entSpec.name.empty() && !entSpec.identification.empty() && 
 		!entSpec.type.empty() && !personSpecificationEnroll.bufferCapture.empty() && 
-		!entSpec.lastName.empty() && !personSpecificationEnroll.templateFace.empty() && 
-		!personSpecificationEnroll.bufferDocumentObverse.empty() &&
-		!personSpecificationEnroll.bufferDocumentReverse.empty())
+		!entSpec.lastName.empty() && !personSpecificationEnroll.templateFace.empty())
 	{
+		
+		ASSInterface::TemplateSpecification specTemplate;
+		specTemplate.templateData.assign(&personSpecificationEnroll.templateFace[0],
+			&personSpecificationEnroll.templateFace[0] + personSpecificationEnroll.templateFace.size());
+		specTemplate.faceSerialized.assign(&personSpecificationEnroll.faceSerialized[0],
+			&personSpecificationEnroll.faceSerialized[0] + personSpecificationEnroll.faceSerialized.size());
 
 		int id;
-
-		innoTask->Enroll(personSpecificationEnroll.templateFace, &id);
+		innoTask->Enroll(specTemplate, &id);
 
 		if (id > 0) {
 			std::string strId = std::to_string(id);
 			strcpy(personSpecificationEnroll.id, strId.c_str());
 			entSpec.id = &personSpecificationEnroll.id[0];
 			entSpec.dataImage = base64->base64_encode(&personSpecificationEnroll.bufferCapture[0], personSpecificationEnroll.bufferCapture.size());
-			entSpec.dataDocObverse = base64->base64_encode(&personSpecificationEnroll.bufferDocumentObverse[0], personSpecificationEnroll.bufferDocumentObverse.size());
-			entSpec.dataDocReverse = base64->base64_encode(&personSpecificationEnroll.bufferDocumentReverse[0], personSpecificationEnroll.bufferDocumentReverse.size());
+
+			if (!personSpecificationEnroll.bufferDocumentObverse.empty())
+			{
+				entSpec.dataDocObverse = base64->base64_encode(&personSpecificationEnroll.bufferDocumentObverse[0], personSpecificationEnroll.bufferDocumentObverse.size());
+
+			}
+
+			if (!personSpecificationEnroll.bufferDocumentReverse.empty())
+			{
+				entSpec.dataDocReverse = base64->base64_encode(&personSpecificationEnroll.bufferDocumentReverse[0], personSpecificationEnroll.bufferDocumentReverse.size());
+
+			}
 
 			dbMongo->Add(entSpec);
 
@@ -445,16 +620,10 @@ bool FrameEnrollment::SavePerson(PersonSpecification& personSpec) {
 			personSpec.txtCapture = personSpecificationEnroll.txtCapture;
 			personSpec.txtGallery = personSpecificationEnroll.txtCapture;
 			personSpec.bufferCapture.clear();
-			personSpec.bufferCapture.assign(&personSpecificationEnroll.bufferCapture[0],
-				&personSpecificationEnroll.bufferCapture[0] + personSpecificationEnroll.bufferCapture.size());
+
 			personSpec.bufferDocumentObverse.clear();
-			personSpec.bufferDocumentObverse.assign(
-				&personSpecificationEnroll.bufferDocumentObverse[0],
-				&personSpecificationEnroll.bufferDocumentObverse[0] + personSpecificationEnroll.bufferDocumentObverse.size());
+
 			personSpec.bufferDocumentReverse.clear();
-			personSpec.bufferDocumentReverse.assign(
-				&personSpecificationEnroll.bufferDocumentReverse[0],
-				&personSpecificationEnroll.bufferDocumentReverse[0] + personSpecificationEnroll.bufferDocumentReverse.size());
 
 			return true;
 		}
@@ -501,6 +670,7 @@ void FrameEnrollment::SaveEventRegister(PersonSpecification& personSpec)
 	entEvent.description = "Register person Unidentified.";
 
 	dbMongo->Add(entEvent);
+	currentIndexVideoDoc = -1;
 }
 
 void FrameEnrollment::SaveEventInside(PersonSpecification& personSpec)
@@ -516,9 +686,8 @@ void FrameEnrollment::SaveEventInside(PersonSpecification& personSpec)
 
 void FrameEnrollment::CreateTaskEnroll(int channel)
 {
-	innoTask = ASSInterface::ExecuteTask::CreateInnoTask(channel);
-	innoDetect = ASSInterface::Detection::CreateInnoDetected(channel);
-	ObserverEnroll();
+	//innoTask = ASSInterface::ExecuteTask::CreateInnoTask(channel);
+	innoDetect = ASSInterface::Detection::CreateInnoDetected(channel);	
 	ObserverDetected();	
 }
 
@@ -544,14 +713,38 @@ void FrameEnrollment::ObserverEnroll()
 
 void FrameEnrollment::SetDataEnrollFace(ASSInterface::IdentitySpecification specIdentify)
 {
-	std::string id = std::to_string(specIdentify.id);
-	strcpy(personSpecificationEnrollComplete.id, id.c_str());
-	personSpecificationEnrollComplete.txtCapture = 0;
-	personSpecificationEnrollComplete.txtCapture = SOIL_load_OGL_texture_from_memory(
+	PersonSpecification personSpecification;
+
+	personSpecification.bufferCapture.assign(&specIdentify.cropData[0],
+		&specIdentify.cropData[0] + specIdentify.cropLength);
+
+	personSpecification.cropWidth = specIdentify.cropWidth;
+	personSpecification.cropHeight = specIdentify.cropHeight;
+	personSpecification.task = specIdentify.task;
+	
+	strcpy(personSpecification.match, std::to_string(specIdentify.match).c_str());
+	strcpy(personSpecification.channel, std::to_string(specIdentify.channel).c_str());
+
+	int sizeTemplate = specIdentify.size;
+	if (sizeTemplate != 0)
+	{
+		personSpecification.size = sizeTemplate;
+		personSpecification.templateFace.assign(&specIdentify.templateData[0],
+			&specIdentify.templateData[0] + sizeTemplate);
+	}
+
+	personSpecification.txtCapture = 0;
+	personSpecification.txtCapture = SOIL_load_OGL_texture_from_memory(
 		&specIdentify.cropData[0], (int)specIdentify.cropData.size(),
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
-	personSpecificationEnrollComplete.bufferCapture.assign(&specIdentify.cropData[0],
-		&specIdentify.cropData[0] + (int)specIdentify.cropData.size());
+
+	if (personSpecificationEnrollComplete.txtCapture == 0)
+	{
+		personSpecificationEnrollComplete.txtCapture = personSpecification.txtCapture;
+
+	}
+
+	listDetected.push_back(personSpecification);
 }
 
 void FrameEnrollment::ObserverDetected()
@@ -596,13 +789,20 @@ bool FrameEnrollment::SaveDatabase()
 
 	if (!entSpec.name.empty() && !entSpec.identification.empty() &&
 		!entSpec.type.empty() && !personSpecificationEnrollComplete.bufferCapture.empty() &&
-		!entSpec.lastName.empty() && !entSpec.identification.empty() && 
-		!personSpecificationEnrollComplete.bufferDocumentObverse.empty() && 
-		!personSpecificationEnrollComplete.bufferDocumentReverse.empty()) {
+		!entSpec.lastName.empty() && !entSpec.identification.empty()) {
 
 		entSpec.dataImage = base64->base64_encode(&personSpecificationEnrollComplete.bufferCapture[0], personSpecificationEnrollComplete.bufferCapture.size());
-		entSpec.dataDocObverse = base64->base64_encode(&personSpecificationEnrollComplete.bufferDocumentObverse[0], personSpecificationEnrollComplete.bufferDocumentObverse.size());
-		entSpec.dataDocReverse = base64->base64_encode(&personSpecificationEnrollComplete.bufferDocumentReverse[0], personSpecificationEnrollComplete.bufferDocumentReverse.size());
+
+		if (!personSpecificationEnrollComplete.bufferDocumentObverse.empty())
+		{
+			entSpec.dataDocObverse = base64->base64_encode(&personSpecificationEnrollComplete.bufferDocumentObverse[0], personSpecificationEnrollComplete.bufferDocumentObverse.size());
+		}
+		
+		if (!personSpecificationEnrollComplete.bufferDocumentReverse.empty())
+		{
+			entSpec.dataDocReverse = base64->base64_encode(&personSpecificationEnrollComplete.bufferDocumentReverse[0], personSpecificationEnrollComplete.bufferDocumentReverse.size());
+		}
+		
 
 		dbMongo->Add(entSpec);
 
@@ -627,11 +827,11 @@ bool FrameEnrollment::SaveDatabase()
 }
 
 bool FrameEnrollment::SaveFaces()
-{
-
-	std::vector<ASSInterface::TemplateSpecification> specTemplates;
+{	
 	if (!listDetected.empty())
 	{
+		std::vector<ASSInterface::TemplateSpecification> specTemplates;
+
 		innoTask = ASSInterface::ExecuteTask::CreateInnoTask(currentIndexVideo);
 
 		for (int i = 0; i < listDetected.size(); i++)
@@ -640,12 +840,20 @@ bool FrameEnrollment::SaveFaces()
 			spec.templateData.assign(&listDetected[i].templateFace[0],
 				&listDetected[i].templateFace[0] + listDetected[i].templateFace.size());
 			spec.size = listDetected[i].size;
+			std::string strQuality = &listDetected[i].match[0];
+			spec.quality = atoi(strQuality.c_str());
+			if (!listDetected[i].faceSerialized.empty())
+			{
+				spec.faceSerialized.assign(&listDetected[i].faceSerialized[0],
+					&listDetected[i].faceSerialized[0] + listDetected[i].faceSerialized.size());
+			}
 			specTemplates.push_back(spec);
 		}
 
 		int id = 0;
 
 		innoTask->EnrollTemplates(specTemplates, &id);
+		specTemplates.clear();
 
 		if (id != 0)
 		{
@@ -672,8 +880,112 @@ void FrameEnrollment::OpenFile()
 	if (!filePaths.empty())
 	{
 		listDetected.clear();
+		personSpecificationEnrollComplete.txtCapture = 0;
 		innoDetect->BuildTemplatesFromPersonFiles(filePaths);
-		isFileButton = false;
+		
+	}
+}
+
+void FrameEnrollment::OpenFileDocument()
+{
+	int width, height, channels, lenght, size;
+
+	std::vector<std::string> filePaths = ASSInterface::FileDialogs::OpenFile(
+		"Images (*.png)\0*.png\0(*.jpg)\0*.jpg\0");
+
+	if (!filePaths.empty() && transImage->GetSize(filePaths[0].c_str(), &width, &height))
+	{		
+		
+		unsigned char* rawImage = NULL;
+
+		if (width > MAX_SIZE_IMAGE) {
+			unsigned char* dataImg = SOIL_load_image(filePaths[0].c_str(), &width, &height, &channels, SOIL_LOAD_AUTO);
+			rawImage = transImage->Resize(dataImg, &width, &height, &lenght);
+			size = lenght;
+		}
+		else
+		{
+			rawImage = SOIL_load_image(filePaths[0].c_str(), &width, &height, &channels, SOIL_LOAD_AUTO);
+			size = width * height * channels;
+		}
+
+		
+		std::vector<unsigned char> imgTemp;
+		imgTemp.resize(200 * MB);
+		transImage->CaptureDocument(rawImage, &width, &height, imgTemp);
+		
+		
+		switch (docFace)
+		{
+		case 1:
+		{					
+			if (isEnrollRAV)
+			{				
+				personSpecificationEnroll.bufferDocumentObverse.clear();
+				std::copy(&imgTemp[0], &imgTemp[0] + imgTemp.size(),
+					std::back_inserter(personSpecificationEnroll.bufferDocumentObverse));
+				
+				personSpecificationEnroll.txtDocumentObverse = SOIL_load_OGL_texture_from_memory(
+					&personSpecificationEnroll.bufferDocumentObverse[0],
+					(int)personSpecificationEnroll.bufferDocumentObverse.size(),
+					SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+					
+
+			}
+			else
+			{
+				
+				personSpecificationEnrollComplete.bufferDocumentObverse.clear();
+				std::copy(&imgTemp[0], &imgTemp[0] + imgTemp.size(),
+					std::back_inserter(personSpecificationEnrollComplete.bufferDocumentObverse));				
+
+				personSpecificationEnrollComplete.txtDocumentObverse = SOIL_load_OGL_texture_from_memory(
+					&personSpecificationEnrollComplete.bufferDocumentObverse[0],
+					(int)personSpecificationEnrollComplete.bufferDocumentObverse.size(),
+					SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+					
+			}
+			
+
+			break;
+		}
+		case 2:
+		{			
+			if (isEnrollRAV) {
+				
+				personSpecificationEnroll.bufferDocumentReverse.clear();
+				std::copy(&imgTemp[0], &imgTemp[0] + imgTemp.size(),
+					std::back_inserter(personSpecificationEnroll.bufferDocumentReverse));
+				
+				personSpecificationEnroll.txtDocumentReverse = SOIL_load_OGL_texture_from_memory(
+					&personSpecificationEnroll.bufferDocumentReverse[0],
+					(int)personSpecificationEnroll.bufferDocumentReverse.size(),
+					SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+					
+			}
+			else
+			{
+				
+				personSpecificationEnrollComplete.bufferDocumentReverse.clear();
+				std::copy(&imgTemp[0], &imgTemp[0] + imgTemp.size(),
+					std::back_inserter(personSpecificationEnrollComplete.bufferDocumentReverse));
+				
+				personSpecificationEnrollComplete.txtDocumentReverse = SOIL_load_OGL_texture_from_memory(
+					&personSpecificationEnrollComplete.bufferDocumentReverse[0],
+					(int)personSpecificationEnrollComplete.bufferDocumentReverse.size(),
+					SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+					
+			}
+			
+						
+			break;
+		}
+		default:
+			break;
+		}
+
+		imgTemp.clear();
+		delete[] rawImage;
 	}
 }
 
@@ -689,20 +1001,10 @@ void FrameEnrollment::OpenFile()
 //
 //}
 
-void FrameEnrollment::CleanSpecification(int option) {
+void FrameEnrollment::CleanSpecification() {
 	PersonSpecification pSpec;
-	switch (option)
-	{
-	case 0:		
-		personSpecificationEnroll = pSpec;
-		break;
-	case 1:
-		personSpecificationEnrollComplete = pSpec;
-		listDetected.clear();
-		break;
-	default:
-		break;
-	}
+	personSpecificationEnrollComplete = pSpec;
+	listDetected.clear();
 		
 }
 
@@ -710,18 +1012,20 @@ void FrameEnrollment::ResetChannel()
 {
 	if (!isEnrollRAV)
 	{
-		currentIndexVideo = -1;
+		currentIndexVideo = -1;		
+		currentIndexVideoDoc = -1;
 		std::string strId = &personSpecificationEnrollComplete.id[0];
 		if (!strId.empty())
 		{
 			int id = atoi(strId.c_str());
-			RemoveFace(id);
-			CleanSpecification(1);
+			RemoveFace(id);			
 		}
 
+		CleanSpecification();
 		ClearTask();
 
 	}
+	
 }
 
 void FrameEnrollment::RemoveFace(int id)
@@ -736,21 +1040,25 @@ void FrameEnrollment::SetTextureDocument()
 		if (!personSpecificationEnroll.bufferDocumentObverse.empty() &&
 			personSpecificationEnroll.txtDocumentObverse == 0)
 		{
-			txtDocumentObverse = ASSInterface::Texture2D::Create(&personSpecificationEnroll.bufferDocumentObverse[0], widthDoc,
-				heightDoc, channelsDoc);
 
 			personSpecificationEnroll.txtDocumentObverse = 0;
-			personSpecificationEnroll.txtDocumentObverse = txtDocumentObverse->GetRendererID();
+			personSpecificationEnroll.txtDocumentObverse = SOIL_load_OGL_texture_from_memory(
+				&personSpecificationEnroll.bufferDocumentObverse[0],
+				(int)personSpecificationEnroll.bufferDocumentObverse.size(),
+				SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+				
 		}
 
 		if (!personSpecificationEnroll.bufferDocumentReverse.empty() &&
 			personSpecificationEnroll.txtDocumentReverse == 0)
 		{
-			txtDocumentReverse = ASSInterface::Texture2D::Create(&personSpecificationEnroll.bufferDocumentReverse[0], widthDoc,
-				heightDoc, channelsDoc);
-
+			
 			personSpecificationEnroll.txtDocumentReverse = 0;
-			personSpecificationEnroll.txtDocumentReverse = txtDocumentReverse->GetRendererID();
+			personSpecificationEnroll.txtDocumentReverse = SOIL_load_OGL_texture_from_memory(
+				&personSpecificationEnroll.bufferDocumentReverse[0],
+				(int)personSpecificationEnroll.bufferDocumentReverse.size(),
+				SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+				
 		}
 	}
 	else
@@ -758,21 +1066,25 @@ void FrameEnrollment::SetTextureDocument()
 		if (!personSpecificationEnrollComplete.bufferDocumentObverse.empty() &&
 			personSpecificationEnrollComplete.txtDocumentObverse == 0)
 		{
-			txtDocumentObverse = ASSInterface::Texture2D::Create(&personSpecificationEnrollComplete.bufferDocumentObverse[0], widthDoc,
-				heightDoc, channelsDoc);
-
+			
 			personSpecificationEnrollComplete.txtDocumentObverse = 0;
-			personSpecificationEnrollComplete.txtDocumentObverse = txtDocumentObverse->GetRendererID();
+			personSpecificationEnrollComplete.txtDocumentObverse = SOIL_load_OGL_texture_from_memory(
+				&personSpecificationEnrollComplete.bufferDocumentObverse[0],
+				(int)personSpecificationEnrollComplete.bufferDocumentObverse.size(),
+				SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+							
 		}
 
 		if (!personSpecificationEnrollComplete.bufferDocumentReverse.empty() &&
 			personSpecificationEnrollComplete.txtDocumentReverse == 0)
 		{
-			txtDocumentReverse = ASSInterface::Texture2D::Create(&personSpecificationEnrollComplete.bufferDocumentReverse[0], widthDoc,
-				heightDoc, channelsDoc);
-
+			
 			personSpecificationEnrollComplete.txtDocumentReverse = 0;
-			personSpecificationEnrollComplete.txtDocumentReverse = txtDocumentReverse->GetRendererID();
+			personSpecificationEnrollComplete.txtDocumentReverse = SOIL_load_OGL_texture_from_memory(
+				&personSpecificationEnrollComplete.bufferDocumentReverse[0],
+				(int)personSpecificationEnrollComplete.bufferDocumentReverse.size(),
+				SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+							
 		}
 	}
 
@@ -792,44 +1104,76 @@ void FrameEnrollment::ClearTask()
 void FrameEnrollment::SetDocumentObverse(std::vector<unsigned char> dataDocument,
 	int width, int height)
 {
-	if (isEnrollRAV)
-	{		
-		personSpecificationEnroll.bufferDocumentObverse.clear();
-		personSpecificationEnroll.bufferDocumentObverse.assign(&dataDocument[0],
-			&dataDocument[0] + dataDocument.size());
+	int channels = 0, lenght = 0;
+	int widthTemp = width;
+	int heightTemp = height;
+	unsigned char* rawImage = NULL;	
+	std::vector<unsigned char> tempImg;
 
-	}
-	else
+	if (dataDocument.size() > 0)
 	{
-		personSpecificationEnrollComplete.bufferDocumentObverse.clear();
-		personSpecificationEnrollComplete.bufferDocumentObverse.assign(&dataDocument[0],
-			&dataDocument[0] + dataDocument.size());
+		std::copy(&dataDocument[0], &dataDocument[0] + dataDocument.size(), std::back_inserter(tempImg));
 
+		rawImage = transImage->Resize(&tempImg[0], &widthTemp, &heightTemp, &lenght);		
+		std::vector<unsigned char> imgDoc;
+		imgDoc.resize(200 * MB);
+		transImage->CaptureDocument(rawImage, &widthTemp, &heightTemp, imgDoc);		
+
+		if (isEnrollRAV)
+		{
+			personSpecificationEnroll.bufferDocumentObverse.clear();
+			std::copy(&imgDoc[0], &imgDoc[0] + imgDoc.size(),
+				std::back_inserter(personSpecificationEnroll.bufferDocumentObverse));			
+		}
+		else
+		{
+			personSpecificationEnrollComplete.bufferDocumentObverse.clear();
+			std::copy(&imgDoc[0], &imgDoc[0] + imgDoc.size(), 
+				std::back_inserter(personSpecificationEnrollComplete.bufferDocumentObverse));			
+
+		}
+
+		
+		imgDoc.clear();
+		tempImg.clear();
+		delete[] rawImage;
 	}
-
-	widthDoc = width;
-	heightDoc = height;
-	channelsDoc = 3;
-
+	
 }
 
 void FrameEnrollment::SetDocumentReverse(std::vector<unsigned char> dataDocument, int width, int height)
 {
-	if (isEnrollRAV) {
+	int channels = 0, lenght = 0;
+	int widthTemp = width;
+	int heightTemp = height;
+	unsigned char* rawImage = NULL;
+	std::vector<unsigned char> tempImg;
+
+	if (dataDocument.size() > 0) {
+		std::copy(&dataDocument[0], &dataDocument[0] + dataDocument.size(), std::back_inserter(tempImg));
+
+		rawImage = transImage->Resize(&tempImg[0], &widthTemp, &heightTemp, &lenght);
 		
-		personSpecificationEnroll.bufferDocumentReverse.clear();
-		personSpecificationEnroll.bufferDocumentReverse.assign(&dataDocument[0],
-			&dataDocument[0] + dataDocument.size());
+		std::vector<unsigned char> imgDoc;
+		imgDoc.resize(200 * MB);
+		transImage->CaptureDocument(rawImage, &widthTemp, &heightTemp, imgDoc);		
 
-	}
-	else
-	{
-		personSpecificationEnrollComplete.bufferDocumentReverse.clear();
-		personSpecificationEnrollComplete.bufferDocumentReverse.assign(&dataDocument[0],
-			&dataDocument[0] + dataDocument.size());
+		if (isEnrollRAV) {
 
+			personSpecificationEnroll.bufferDocumentReverse.clear();
+			std::copy(&imgDoc[0], &imgDoc[0] + imgDoc.size(),
+				std::back_inserter(personSpecificationEnroll.bufferDocumentReverse));			
+		}
+		else
+		{
+			personSpecificationEnrollComplete.bufferDocumentReverse.clear();
+			std::copy(&imgDoc[0], &imgDoc[0] + imgDoc.size(),
+				std::back_inserter(personSpecificationEnrollComplete.bufferDocumentReverse));			
+		}
+		
+		imgDoc.clear();
+		tempImg.clear();
+		delete[] rawImage;
 	}
-	widthDoc = width;
-	heightDoc = height;
-	channelsDoc = 3;
+	
 }

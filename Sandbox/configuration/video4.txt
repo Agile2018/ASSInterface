@@ -1,0 +1,1 @@
+{"deviceVideo":"/dev/video0","fileVideo":"assets/textures/video5.mp4","ipCamera":"rtsp://root:123qwe@192.168.0.12:554/axis-media/media.amp","label":"Video5","sourceFlow":2}

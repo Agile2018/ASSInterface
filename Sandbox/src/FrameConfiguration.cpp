@@ -15,6 +15,7 @@ FrameConfiguration::FrameConfiguration(ASSInterface::LanguageType language)
 	configurationEnroll = ASSInterface::Configuration::CreateConfigEnroll();
 	configurationEntry = ASSInterface::Configuration::CreateConfigEntry();
 	configurationOnTheFly = ASSInterface::Configuration::CreateConfigOnTheFly();
+	managerFile = ASSInterface::File::Create();
 
 }
 
@@ -22,7 +23,7 @@ FrameConfiguration::~FrameConfiguration()
 {
 }
 
-void FrameConfiguration::ShowParametersFaceProcessing(bool* p_open)
+void FrameConfiguration::ShowParametersFaceProcessing(bool* p_open, bool change)
 {
 	
 	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
@@ -170,12 +171,19 @@ void FrameConfiguration::ShowParametersFaceProcessing(bool* p_open)
 	ImGui::Separator();
 	ImGui::Spacing();
 	if (ImGui::Button("Save parameters")) {
-		SaveParametersFace();
+		if (change)
+		{
+			SaveParametersFace();
+		}
+		else
+		{
+			*messageStatus = "Save fail, close all windows.";
+		}
 	}
 	ImGui::End();
 }
 
-void FrameConfiguration::ShowParametersFaceTracking(bool* p_open)
+void FrameConfiguration::ShowParametersFaceTracking(bool* p_open, bool change)
 {
 	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
 
@@ -260,12 +268,20 @@ void FrameConfiguration::ShowParametersFaceTracking(bool* p_open)
 	ImGui::Separator();
 	ImGui::Spacing();
 	if (ImGui::Button("Save parameters")) {
-		SaveParametersTrack();
+		if (change)
+		{
+			SaveParametersTrack();
+		}
+		else
+		{
+			*messageStatus = "Save fail, close all windows.";
+		}
+		
 	}
 	ImGui::End();
 }
 
-void FrameConfiguration::ShowParametersEnrollmentProcessing(bool* p_open)
+void FrameConfiguration::ShowParametersEnrollmentProcessing(bool* p_open, bool change)
 {
 	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
 
@@ -341,7 +357,7 @@ void FrameConfiguration::ShowParametersEnrollmentProcessing(bool* p_open)
 	}
 	PutToolTip(ASSInterface::Label::GetLabel(DESC_GALLERY, lg));
 	ImGui::PushItemWidth(100);
-	ImGui::SliderInt("Maximun Concatenated Templates:", &maxTemplates, -1, 100);
+	ImGui::SliderInt("Maximum number of templates:", &maxTemplates, -1, 100);
 	PutToolTip(ASSInterface::Label::GetLabel(DESC_GALLERY, lg));
 	ImGui::Text("Concatenation mode:"); ImGui::SameLine();
 	ImGui::PushItemWidth(100);
@@ -358,21 +374,31 @@ void FrameConfiguration::ShowParametersEnrollmentProcessing(bool* p_open)
 	}
 	PutToolTip(ASSInterface::Label::GetLabel(DESC_GALLERY, lg));
 	ImGui::PushItemWidth(100);
-	ImGui::SliderInt("Enroll Concatenation minimum score threshold:", &minScore, 0, 100);
+	ImGui::SliderInt("Enroll concatenation minimum score threshold:", &minScore, 0, 100);
 	PutToolTip(ASSInterface::Label::GetLabel(DESC_GALLERY, lg));
 	ImGui::PushItemWidth(100);
-	ImGui::SliderInt("Enroll Concatenation maximum score threshold:", &maxScore, 0, 100);
-
+	ImGui::SliderInt("Enroll concatenation maximum score threshold:", &maxScore, 0, 100);
+	PutToolTip(ASSInterface::Label::GetLabel(DESC_GALLERY, lg));
+	ImGui::PushItemWidth(100);
+	ImGui::SliderInt("Video registration duration:", &duration, 0, 100);
 	ImGui::Separator();
 	ImGui::Spacing();
 	if (ImGui::Button("Save parameters")) {
-		SaveParametersEnroll();
+		if (change)
+		{
+			SaveParametersEnroll();
+		}
+		else
+		{
+			*messageStatus = "Save fail, close all windows.";
+		}
+		
 	}
 
 	ImGui::End();
 }
 
-void FrameConfiguration::ShowParametersControlEntryMatch(bool* p_open)
+void FrameConfiguration::ShowParametersControlEntryMatch(bool* p_open, bool change)
 {
 	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
 
@@ -412,7 +438,15 @@ void FrameConfiguration::ShowParametersControlEntryMatch(bool* p_open)
 	ImGui::Separator();
 	ImGui::Spacing();
 	if (ImGui::Button("Save parameters")) {
-		SaveParametersEntry();
+		if (change)
+		{
+			SaveParametersEntry();
+		}
+		else
+		{
+			*messageStatus = "Save fail, close all windows.";
+		}
+		
 	}
 	ImGui::End();
 }
@@ -459,8 +493,21 @@ void FrameConfiguration::ShowParametersChannel(bool* p_open)
 	ImGui::RadioButton("DEVICE", &channelType, 3);
 	ImGui::Separator();
 	ImGui::Spacing();
-	if (ImGui::Button("Save parameters")) {
-		SaveParametersChannel();
+	if (ImGui::Button("Save parameters"))
+		ImGui::OpenPopup("Save?"); 
+	if (ImGui::BeginPopupModal("Save?", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse))
+	{
+		ImGui::Text("The application will close.\nAre you sure?\n\n");
+		ImGui::Separator();
+
+		if (ImGui::Button("OK", ImVec2(120, 0))) {
+			SaveParametersChannel();
+			ImGui::CloseCurrentPopup();
+			ASSInterface::Application::Get().Close();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+		ImGui::EndPopup();
 	}
 
 	ImGui::End();
@@ -516,53 +563,9 @@ void FrameConfiguration::ShowParametersBiometric(bool* p_open)
 
 	ImGui::Separator();
 	ImGui::Spacing();
-	if (ImGui::Button("Save parameters")) {
-		
+	if (ImGui::Button("Save parameters")) {		
 		SaveParameteresGlobals();
-	}
-	ImGui::End();
-}
 
-void FrameConfiguration::ShowParametersOnthefly(bool* p_open)
-{
-	
-	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
-
-	if (!ImGui::Begin("Enroll on the fly", p_open))
-	{
-		ImGui::End();
-		return;
-	}
-
-	SetParametersOnTheFly();
-	ImGui::Text("Channel Number:"); ImGui::SameLine();
-	ImGui::PushItemWidth(50);
-	if (ImGui::BeginCombo("##channel", channel)) {
-		for (int n = 0; n < IM_ARRAYSIZE(numberChannels); n++) {
-			bool is_selected = (channel == numberChannels[n]);
-			if (ImGui::Selectable(numberChannels[n], is_selected)) {
-				channel = numberChannels[n];
-				ImGui::SetItemDefaultFocus();
-			}
-		}
-		ImGui::EndCombo();
-	}
-
-	ImGui::Separator();
-	ImGui::Spacing();
-
-	PutToolTip(ASSInterface::Label::GetLabel(DESC_CHANNEL_TYPE, lg));
-	ImGui::PushItemWidth(100);
-	ImGui::SliderInt("Maximum number of templates:", &numberTemplates, 1, 15);
-
-	PutToolTip(ASSInterface::Label::GetLabel(DESC_CHANNEL_TYPE, lg));
-	ImGui::PushItemWidth(100);
-	ImGui::SliderInt("Show maximum number of images:", &showNumberImages, 1, 10);
-
-	ImGui::Separator();
-	ImGui::Spacing();
-	if (ImGui::Button("Save parameters")) {
-		SaveParametersOnTheFly();
 	}
 	ImGui::End();
 }
@@ -590,21 +593,37 @@ void FrameConfiguration::ShowParametersDatabase(bool* p_open)
 
 	ImGui::Separator();
 	ImGui::Spacing();
-	if (ImGui::Button("Save parameters")) {
-		SaveParametersDatabase();
+	if (ImGui::Button("Save parameters")) 
+		ImGui::OpenPopup("Save?");
+	if (ImGui::BeginPopupModal("Save?", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse))
+	{
+		ImGui::Text("The application will close.\nAre you sure?\n\n");
+		ImGui::Separator();
+
+		if (ImGui::Button("OK", ImVec2(120, 0))) {
+			SaveParametersDatabase();
+			ImGui::CloseCurrentPopup();
+			ASSInterface::Application::Get().Close();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+		ImGui::EndPopup();
 	}
+
 	ImGui::SameLine();
 
 	if (ImGui::Button("Delete Database"))
 		ImGui::OpenPopup("Delete?");
 	if (ImGui::BeginPopupModal("Delete?", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse))
 	{
-		ImGui::Text("All collections will be deleted.\nThis operation cannot be undone!\nAre you sure?\n\n");
+		ImGui::Text("All collections will be deleted.\nThis operation cannot be undone!\nThe application will close.\nAre you sure?\n\n");
 		ImGui::Separator();
 
 		if (ImGui::Button("OK", ImVec2(120, 0))) { 
 			DropDatabase();
+			managerFile->DelFile("iengine.db");
 			ImGui::CloseCurrentPopup(); 
+			ASSInterface::Application::Get().Close();
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
@@ -853,6 +872,7 @@ void FrameConfiguration::SetParametersEnroll() {
 		std::any anyConcatenateMode = configurationEnroll->GetParam("AFACE_CONCATENATE_MODE");
 		std::any anyMinScore = configurationEnroll->GetParam("AFACE_MIN_SCORE");
 		std::any anyMaxScore = configurationEnroll->GetParam("AFACE_MAX_SCORE");
+		std::any anyDuration = configurationEnroll->GetParam("AFACE_DURATION");
 
 		detectionThreshold = std::any_cast<int>(anyDetectThreshold);
 		similarityThreshold = std::any_cast<int>(anySimilarityThreshold);
@@ -867,6 +887,7 @@ void FrameConfiguration::SetParametersEnroll() {
 		deduplicateDesc = yesOrno[deduplicate];
 		concatenateDesc = yesOrno[concatenate];
 		concatenateModeDesc = concatenateOptions[concatenateMode];
+		duration = std::any_cast<int>(anyDuration);
 	}
 }
 
@@ -885,8 +906,14 @@ void FrameConfiguration::SaveParametersEnroll() {
 		configurationEnroll->SetParam("AFACE_CONCATENATE_MODE", concatenateMode);
 		configurationEnroll->SetParam("AFACE_MIN_SCORE", minScore);
 		configurationEnroll->SetParam("AFACE_MAX_SCORE", maxScore);
-
+		configurationEnroll->SetParam("AFACE_DURATION", duration);
 		configurationEnroll->ParseToFile();
+
+		ChangeConfiguration dataChange;
+		dataChange.channel = atoi(numberChannel.c_str()) - 1;
+		dataChange.type = ConstantApplication::ConfigurationType::Enroll;
+		shootChangeConfig.on_next(dataChange);
+		*messageStatus = "Save Enroll OK.";
 	}
 }
 
@@ -903,8 +930,13 @@ void FrameConfiguration::SaveParametersTrack() {
 		configurationTrack->SetParam("TRACK_MOTION_OPTIMIZATION", trackOptimus);
 		configurationTrack->SetParam("TRACK_DEEP_TRACK", deepTracking);		
 		configurationTrack->SetParam("TRACK_CONFIDENCE_THRESHOLD", confidenceThresholdTrack);
-
 		configurationTrack->ParseToFile();
+
+		ChangeConfiguration dataChange;
+		dataChange.channel = atoi(numberChannel.c_str()) - 1;
+		dataChange.type = ConstantApplication::ConfigurationType::Track;
+		shootChangeConfig.on_next(dataChange);
+		*messageStatus = "Save Track OK.";
 	}
 
 }
@@ -979,8 +1011,13 @@ void FrameConfiguration::SaveParametersFace() {
 		configurationFace->SetParam("CFG_IFACE_EXTRACTION_MODE", extraction);
 		configurationFace->SetParam("CFG_IFACE_DETECT_FORCED", detectForced);
 		configurationFace->SetParam("CFG_IFACE_IGNORE_MULTIPLE_FACES", multipleFace);
-
 		configurationFace->ParseToFile();
+
+		ChangeConfiguration dataChange;
+		dataChange.channel = atoi(numberChannel.c_str()) - 1;
+		dataChange.type = ConstantApplication::ConfigurationType::Face;
+		shootChangeConfig.on_next(dataChange);
+		*messageStatus = "Save Face OK.";
 	}
 }
 
@@ -993,9 +1030,14 @@ void FrameConfiguration::SaveParametersEntry() {
 		configurationEntry->SetParam("CFG_IDENTIFICATION_SIMILARITY_THRESHOLD", idenSimilarityThreshold);
 		configurationEntry->SetParam("CFG_VERIFICATION_SIMILARITY_THRESHOLD", verySimilarityThreshold);
 		configurationEntry->SetParam("CFG_BEST_CANDIDATES_COUNT", bestCadidates);
-		configurationEntry->SetParam("CFG_IDENTIFICATION_SPEED", identificationSpeed);
-		
+		configurationEntry->SetParam("CFG_IDENTIFICATION_SPEED", identificationSpeed);		
 		configurationEntry->ParseToFile();
+
+		ChangeConfiguration dataChange;
+		dataChange.channel = atoi(numberChannel.c_str()) - 1;
+		dataChange.type = ConstantApplication::ConfigurationType::Entry;
+		shootChangeConfig.on_next(dataChange);
+		*messageStatus = "Save Entry OK.";
 	}
 }
 
@@ -1039,6 +1081,11 @@ void FrameConfiguration::SaveParameteresGlobals()
 	configurationGlobals->SetParam("GLOBAL_THREAD_MANAGEMENT_MODE", mode);
 	configurationGlobals->SetParam("GLOBAL_THREAD_NUM", thrNumber);
 	configurationGlobals->ParseToFile();
+
+	ChangeConfiguration dataChange;	
+	dataChange.type = ConstantApplication::ConfigurationType::Global;
+	shootChangeConfig.on_next(dataChange);
+	*messageStatus = "Save Globals OK.";
 }
 
 void FrameConfiguration::SetParametersGlobals() {
@@ -1056,37 +1103,6 @@ void FrameConfiguration::SetParametersGlobals() {
 	thrNumber = std::any_cast<int>(anyNum);
 	cgpu = yesOrno[gpu];
 	threadManagement = multithreadingMode[mode];
-}
-
-void FrameConfiguration::SetParametersOnTheFly() {
-	static char chn = '0';
-
-	if (channel != nullptr && chn != *channel) {
-		chn = *channel;
-		std::string numberChannel = channel;
-		std::string nameFile = "rav" + numberChannel + ".txt";
-		configurationOnTheFly->SetPath(nameFile);
-		configurationOnTheFly->ParseToObject();
-
-		std::any anyTemplates = configurationOnTheFly->GetParam("AFACE_NUMBER_TEMPLATES");
-		std::any anyImages= configurationOnTheFly->GetParam("AFACE_NUMBER_IMAGES");
-
-		numberTemplates = std::any_cast<int>(anyTemplates);
-		showNumberImages = std::any_cast<int>(anyImages);
-	}
-}
-
-void FrameConfiguration::SaveParametersOnTheFly() {
-	if (channel != nullptr) {
-		std::string numberChannel = channel;
-		std::string nameFile = "rav" + numberChannel + ".txt";
-		configurationOnTheFly->SetPath(nameFile);
-
-		configurationOnTheFly->SetParam("AFACE_NUMBER_TEMPLATES", numberTemplates);
-		configurationOnTheFly->SetParam("AFACE_NUMBER_IMAGES", showNumberImages);
-
-		configurationOnTheFly->ParseToFile();
-	}
 }
 
 void FrameConfiguration::SaveParametersLicence()

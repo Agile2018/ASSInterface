@@ -8,9 +8,7 @@ namespace ASSInterface {
 		errorIDkit = ASSInterface::ErrorIdentification::CreateIDkit();
 		watchProcessor = ASSInterface::GraphicProcessor::WatchCUDA();
 		isGraphicProcessor = watchProcessor->ThereIsGraphicProcessor();
-		ASS_INFO("Graphic Processor: {0}", watchProcessor->GetDescription());
-
-		GetParametersGlobals();
+		ASS_INFO("Graphic Processor: {0}", watchProcessor->GetDescription());		
 	}
 	InnoInitLibrary::~InnoInitLibrary()
 	{
@@ -18,6 +16,7 @@ namespace ASSInterface {
 	}
 	void InnoInitLibrary::Init()
 	{		
+		GetParametersGlobals();
 		SetParamsLibrary();
 		InitIFACE();
 		InitIDKIT();

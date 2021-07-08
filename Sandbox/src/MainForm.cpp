@@ -4,8 +4,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <SOIL2.h>
-#include "ASSInterface/Utils/PlatformUtils.h"
+//#include <SOIL2.h>
+//#include "ASSInterface/Utils/PlatformUtils.h"
 
 static bool show_configuration_menu_bar = false;
 static bool show_enrollment_rav_menu_bar = false;
@@ -17,12 +17,10 @@ static bool show_face_enrollment = false;
 static bool show_control_entry_match = false;
 static bool show_params_channel = false;
 static bool show_params_global_biometric = false;
-static bool show_params_enroll_onthefly = false;
 static bool show_params_database = false;
 static bool show_output_control = false;
 static bool show_simple_overlay = false;
 static bool show_view_reset = false;
-static bool show_operational = false;
 static bool show_register_debug = false;
 static bool show_inside_debug = false;
 static bool show_comunication_debug = false;
@@ -51,6 +49,39 @@ MainForm::MainForm() : Layer("WhoIsLayer")
 MainForm::~MainForm()
 {
 	initInnovatrics->Terminate();
+}
+
+bool MainForm::FramesOpen()
+{
+	return !show_enrollment_rav_menu_bar && !show_enrollment_menu_bar &&
+		!show_control_entry_menu_bar && !show_output_control &&
+		!show_inside_control && !show_unidentified && !show_edit_register &&
+		!show_import;
+}
+
+void MainForm::ResetView(bool* p_open)
+{
+	ImGui::SetNextWindowPos(ImVec2(200, 200), ImGuiCond_FirstUseEver);
+
+	if (!ImGui::Begin("Reset View", p_open))
+	{
+		ImGui::End();
+		return;
+	}
+
+	ImGui::Text("The application will close.\nAre you sure?\n\n");
+	ImGui::Separator();
+
+	if (ImGui::Button("OK", ImVec2(120, 0))) {
+		if (managerFile->ResetConfig()) *messageStatus = "Reset OK";		
+		ASSInterface::Application::Get().Close();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Cancel", ImVec2(120, 0))) { *p_open = false; }
+
+	ImGui::End();
+
+	
 }
 
 void MainForm::OnAttach()
@@ -110,7 +141,7 @@ void MainForm::ShowMenuEnrollmentRAV(bool* p_open)
 {	
 	if (indexUnidentified != -1)
 	{
-		//frmEnrollment->SetEnabledCapture(false);
+		
 		frmEnrollment->GetPersonEnrolled()->txtCapture = frmUnidentified->GetPersonUnidentified(indexUnidentified)->txtCapture;
 		frmEnrollment->GetPersonEnrolled()->bufferCapture.clear();
 		frmEnrollment->GetPersonEnrolled()->bufferCapture.assign(&frmUnidentified->GetPersonUnidentified(indexUnidentified)->bufferCapture[0], &frmUnidentified->GetPersonUnidentified(indexUnidentified)->bufferCapture[0] + frmUnidentified->GetPersonUnidentified(indexUnidentified)->bufferCapture.size());
@@ -121,6 +152,12 @@ void MainForm::ShowMenuEnrollmentRAV(bool* p_open)
 		strcpy(frmEnrollment->GetPersonEnrolled()->channel, frmUnidentified->GetPersonUnidentified(indexUnidentified)->channel);
 		frmEnrollment->GetPersonEnrolled()->templateFace.clear();
 		frmEnrollment->GetPersonEnrolled()->templateFace.assign(&frmUnidentified->GetPersonUnidentified(indexUnidentified)->templateFace[0], &frmUnidentified->GetPersonUnidentified(indexUnidentified)->templateFace[0] + frmUnidentified->GetPersonUnidentified(indexUnidentified)->templateFace.size());
+		frmEnrollment->GetPersonEnrolled()->faceSerialized.clear();
+		frmEnrollment->GetPersonEnrolled()->faceSerialized.assign(
+			&frmUnidentified->GetPersonUnidentified(indexUnidentified)->faceSerialized[0],
+			&frmUnidentified->GetPersonUnidentified(indexUnidentified)->faceSerialized[0] +
+			frmUnidentified->GetPersonUnidentified(indexUnidentified)->faceSerialized.size());
+
 		int chn = atoi(frmUnidentified->GetPersonUnidentified(indexUnidentified)->channel);
 		chn -= 1;
 		
@@ -176,68 +213,6 @@ void MainForm::ShowMenuControlEntry(bool* p_open)
 		frmOutputControl->SetPersonInside(personSpecificationTemp);		
 	}
 }
-
-
-//bool MainForm::SaveDataPerson(int channel)
-//{
-//	
-//	ASSInterface::EntitySpecification entSpec;
-//	entSpec.id = &frmEnrollment->GetPersonEnrolled()->id[0]; // personSpecificationEnroll.id[0]
-//	entSpec.name = &frmEnrollment->GetPersonEnrolled()->name[0];
-//	entSpec.identification = &frmEnrollment->GetPersonEnrolled()->document[0];
-//	entSpec.date = ASSInterface::DateTime::NowToLong();
-//	entSpec.type = &frmEnrollment->GetPersonEnrolled()->type[0];
-//
-//	if (!entSpec.id.empty() && channel != -1 && !entSpec.name.empty() && 
-//		!entSpec.identification.empty() && !entSpec.type.empty())
-//	{
-//		std::vector<unsigned char> bufferImage = transformImage->Resize(videos[channel].GetDataRaw(),
-//			videos[channel].GetHeightImage(), videos[channel].GetWidthImage());
-//
-//		unsigned int in_len = (unsigned int)bufferImage.size();
-//
-//		entSpec.data = base64->base64_encode(&bufferImage[0], in_len);
-//		//dbMongo->Add(entSpec);
-//
-//		int width, height, channels;
-//
-//		unsigned char* dataTemp = SOIL_load_image_from_memory(&bufferImage[0],
-//			(int)bufferImage.size(), &width, &height, &channels, SOIL_LOAD_RGB);
-//		frmEnrollment->SetImageToTexture(dataTemp, width, height, channels);
-//		return true;
-//		
-//	}
-//	return false;
-//}
-
-//void MainForm::GetDataPerson(std::string id) {
-//
-//	if (!id.empty())
-//	{
-//		/*dbMongo->Get(id.c_str());
-//
-//		long dte = dbMongo->GetEntitySpecification().date;
-//		std::string strDate = ASSInterface::DateTime::LongToString(dte);
-//		strcpy(personSpecificationLastAction.id, dbMongo->GetEntitySpecification().id.c_str());
-//		strcpy(personSpecificationLastAction.name, dbMongo->GetEntitySpecification().name.c_str());
-//		strcpy(personSpecificationLastAction.document, dbMongo->GetEntitySpecification().identification.c_str());
-//		strcpy(personSpecificationLastAction.date, strDate.c_str());
-//
-//		std::string imgData = dbMongo->GetEntitySpecification().data;
-//		std::string decImg = base64->base64_decode(imgData);
-//		std::vector<char> cstr(decImg.c_str(), decImg.c_str() + decImg.size() + 1);
-//		const unsigned char* templateData = reinterpret_cast<const unsigned char*>(&cstr[0]);
-//
-//		int width, height, channels;
-//
-//		unsigned char* dataTemp = SOIL_load_image_from_memory(templateData,
-//			(int)cstr.size(), &width, &height, &channels, SOIL_LOAD_RGB);*/
-//
-//	
-//	}
-//		transImage
-// 
-//}
 
 void MainForm::OnImGuiRender()
 {
@@ -330,6 +305,7 @@ void MainForm::InitForms()
 		frmControlEntry->SetViewChannel(&stateVideo[i]);
 		frmEnrollment->SetViewChannel(&stateVideo[i]);
 		frmImport->SetViewChannel(&stateVideo[i]);
+		frmEditRegister->SetViewChannel(&stateVideo[i]);
 	}
 
 	for (int i = 0; i < MAX_CHANNELS; i++) {
@@ -348,19 +324,21 @@ void MainForm::InitForms()
 	ObserverIdentification();
 	ObserverTextureDocument();
 	ObserverConnection();
+	ObserverChangeConfiguration();
+	ObserverPersonOutside();
+	
 }
 
 void MainForm::ShowMenuMain()
-{
-	
+{	
+
 	if (show_configuration_menu_bar) ShowMenuConfiguration(&show_configuration_menu_bar);
-	if (show_face_processing) frmConfiguration->ShowParametersFaceProcessing(&show_face_processing);
-	if (show_face_tracking) frmConfiguration->ShowParametersFaceTracking(&show_face_tracking);
-	if (show_face_enrollment) frmConfiguration->ShowParametersEnrollmentProcessing(&show_face_enrollment);
-	if (show_control_entry_match) frmConfiguration->ShowParametersControlEntryMatch(&show_control_entry_match);
+	if (show_face_processing) frmConfiguration->ShowParametersFaceProcessing(&show_face_processing, isSave);
+	if (show_face_tracking) frmConfiguration->ShowParametersFaceTracking(&show_face_tracking, isSave);
+	if (show_face_enrollment) frmConfiguration->ShowParametersEnrollmentProcessing(&show_face_enrollment, isSave);
+	if (show_control_entry_match) frmConfiguration->ShowParametersControlEntryMatch(&show_control_entry_match, isSave);
 	if (show_params_channel) frmConfiguration->ShowParametersChannel(&show_params_channel);
 	if (show_params_global_biometric) frmConfiguration->ShowParametersBiometric(&show_params_global_biometric);
-	if (show_params_enroll_onthefly) frmConfiguration->ShowParametersOnthefly(&show_params_enroll_onthefly);
 	if (show_params_database) frmConfiguration->ShowParametersDatabase(&show_params_database);
 	if (show_params_licence) frmConfiguration->ShowParametersLicence(&show_params_licence);
 
@@ -399,7 +377,7 @@ void MainForm::ShowMenuMain()
 
 	if (!show_enrollment_rav_menu_bar) {				
 		indexUnidentified = -1;
-		frmEnrollment->CleanSpecification(0);		
+		//frmEnrollment->CleanSpecification();			
 	}
 		
 	if (show_simple_overlay) ShowWindowTip(&show_simple_overlay);
@@ -407,14 +385,23 @@ void MainForm::ShowMenuMain()
 	if (show_log) ShowAppLog(&show_log);
 
 	if (show_edit_register) frmEditRegister->Show(&show_edit_register);
+	if (!show_edit_register) frmEditRegister->ResetListFind(true);
 
 	if (show_import) frmImport->Show(&show_import);
+	if (!show_import) frmImport->ResetChannel();
+	if (show_view_reset) ResetView(&show_view_reset);
 
+	isSave = FramesOpen();
 
 	if (ImGui::BeginMenuBar())
 	{
 		if (ImGui::BeginMenu("File")) {
-			ImGui::MenuItem("View reset", NULL, &show_view_reset);
+			if (ImGui::MenuItem("Save View")) {
+				if (managerFile->SaveConfig()) *messageStatus = "Save OK";
+			}
+
+			ImGui::MenuItem("View reset", NULL, &show_view_reset);						
+
 			if (ImGui::MenuItem("Exit")) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 				ASSInterface::Application::Get().Close();
@@ -439,7 +426,7 @@ void MainForm::ShowMenuMain()
 			if (ImGui::BeginMenu("Operational")) {
 				ImGui::MenuItem("Inside control", NULL, &show_inside_control);
 				ImGui::MenuItem("Outside control", NULL, &show_output_control);
-				ImGui::MenuItem("Unidentified control", NULL, &show_unidentified);
+				ImGui::MenuItem("Unidentified control", NULL, &show_unidentified);				
 				ImGui::EndMenu();
 			}
 			
@@ -458,27 +445,9 @@ void MainForm::ShowMenuMain()
 		}
 
 		if (ImGui::BeginMenu("Configuration")) {
+			
 			ImGui::MenuItem("All parameters", NULL, &show_configuration_menu_bar);
-			if (ImGui::BeginMenu(ASSInterface::Label::GetLabel(LBL_GLOBAL_PARAMETERS, lg).c_str())) {
-				ImGui::MenuItem("Global biometric parameters", NULL, &show_params_global_biometric);
-				ImGui::MenuItem("Global enrollment on-the-fly parameters", NULL, &show_params_enroll_onthefly);
-				ImGui::MenuItem("Database parameters", NULL, &show_params_database);
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("Channel parameters")) {
-				ImGui::MenuItem("Facial processing parameters", NULL, &show_face_processing);
-				ImGui::MenuItem("Facial tracking parameters", NULL, &show_face_tracking);
-				ImGui::MenuItem("Enrollment processing parameters", NULL, &show_face_enrollment);
-				ImGui::MenuItem("Access control and matching", NULL, &show_control_entry_match);
-				ImGui::MenuItem("Channel configuration", NULL, &show_params_channel);
-				ImGui::EndMenu();
-			}
-
-			if (ImGui::BeginMenu("Client parameters")) {
-				ImGui::MenuItem("Data licence", NULL, &show_params_licence);
-				ImGui::EndMenu();
-			}
-
+			
 			ImGui::EndMenu();
 		}
 
@@ -517,9 +486,7 @@ void MainForm::ShowMenuConfiguration(bool* p_open)
 		if (ImGui::Button("Biometric parameters")) {
 			show_params_global_biometric = true;
 		}
-		if (ImGui::Button("On-the-fly registration")) {
-			show_params_enroll_onthefly = true;
-		}
+		
 		if (ImGui::Button("Database")) {
 			show_params_database = true;
 		}
@@ -647,11 +614,35 @@ void MainForm::ObserverChannelTask()
 		.subscribe([this](int channelSelect) {
 			if (videos[channelSelect].IsCorrectStart()) {
 				videos[channelSelect].SetTask(ENROLL_PERSON);
+				if (!frmEnrollment->GetStateTask())
+				{
+					frmEnrollment->SetInnoTask(videos[channelSelect].GetExecuteTask());
+				}
 				
 			}
 		});
 
 	subscriptionChannelEnroll.clear();
+
+	auto channelObservableEdit = frmEditRegister->GetChannel()
+		.map([](int channelSelect) {
+		return channelSelect;
+			});
+
+	auto subscriptionChannelEdit = channelObservableEdit
+		.subscribe([this](int channelSelect) {
+			if (videos[channelSelect].IsCorrectStart()) {
+				videos[channelSelect].SetTask(EDIT_PERSON);				
+				if (!frmEditRegister->GetStateTask())
+				{
+					frmEditRegister->SetInnoTask(videos[channelSelect].GetExecuteTask());
+				}
+			
+			}
+		});
+
+	subscriptionChannelEdit.clear();
+
 
 	std::vector<rxcpp::observable<std::tuple<int, int>>> observersChannel;
 	for (int i = 0; i < MAX_CHANNELS - 1; i++)
@@ -688,6 +679,14 @@ void MainForm::ObserverChannelTask()
 					}
 					break;
 				}					
+				case 2:
+				{
+					int chn = std::get<0>(tupleChannel);
+					if (videos[chn].IsCorrectStart()) {
+						videos[chn].SetTask(CONTROL_ENTRY_TRACK2);
+					}
+					break;
+				}
 				default:
 					break;
 				}
@@ -729,8 +728,8 @@ void MainForm::ObserverTextureDocument()
 		});
 
 	auto subscriptionDocumentObverse = documentObservableObverse
-		.subscribe([this](int channelSelect) {
-			frmEnrollment->SetDocumentObverse(videos[channelSelect].GetDataTexture(),
+		.subscribe([this](int channelSelect) {					
+			frmEnrollment->SetDocumentObverse(videos[channelSelect].GetDataTexture(), 
 				videos[channelSelect].GetWidthImage(), videos[channelSelect].GetHeightImage());
 		});
 
@@ -743,11 +742,40 @@ void MainForm::ObserverTextureDocument()
 
 	auto subscriptionDocumentReverse = documentObservableReverse
 		.subscribe([this](int channelSelect) {
+		
 		frmEnrollment->SetDocumentReverse(videos[channelSelect].GetDataTexture(),
 			videos[channelSelect].GetWidthImage(), videos[channelSelect].GetHeightImage());
 		});
 
 	subscriptionDocumentReverse.clear();
+
+	auto documentEditObservableObverse = frmEditRegister->GetTextDocumentObverse()
+		.map([](int channelSelect) {
+		return channelSelect;
+			});
+
+	auto subscriptionDocumentEditObverse = documentEditObservableObverse
+		.subscribe([this](int channelSelect) {
+		frmEditRegister->SetDocumentObverse(videos[channelSelect].GetDataTexture(),
+			videos[channelSelect].GetWidthImage(), videos[channelSelect].GetHeightImage());
+			});
+
+	subscriptionDocumentEditObverse.clear();
+
+	auto documentEditObservableReverse = frmEditRegister->GetTextDocumentReverse()
+		.map([](int channelSelect) {
+		return channelSelect;
+			});
+
+	auto subscriptionDocumentEditReverse = documentEditObservableReverse
+		.subscribe([this](int channelSelect) {
+
+		frmEditRegister->SetDocumentReverse(videos[channelSelect].GetDataTexture(),
+			videos[channelSelect].GetWidthImage(), videos[channelSelect].GetHeightImage());
+			});
+
+	subscriptionDocumentEditReverse.clear();
+
 }
 
 void MainForm::ObserverConnection()
@@ -768,13 +796,91 @@ void MainForm::ObserverConnection()
 	subscriptionConnection.clear();
 }
 
+void MainForm::ObserverChangeConfiguration()
+{
+	auto changeObservable = frmConfiguration->GetChangeConfig()
+		.map([](ChangeConfiguration change) {
+			return change;
+		});
+
+	auto subscriptionChange = changeObservable
+		.subscribe([this](ChangeConfiguration change) {
+			
+		switch (change.type)
+		{
+		case ConstantApplication::ConfigurationType::Enroll:
+		{
+			if (videos[change.channel].IsCorrectStart()) {
+				videos[change.channel].ResetTask();
+
+			}
+
+			break;
+		}			
+		case ConstantApplication::ConfigurationType::Entry:
+		{
+			if (videos[change.channel].IsCorrectStart()) {
+				videos[change.channel].ResetTask();
+			}
+
+			break;
+		}			
+		case ConstantApplication::ConfigurationType::Face:
+		{
+			if (videos[change.channel].IsCorrectStart()) {
+				videos[change.channel].ResetTask();
+				videos[change.channel].ResetTrack();
+			}
+
+			break;
+		}			
+		case ConstantApplication::ConfigurationType::Track:
+		{
+			if (videos[change.channel].IsCorrectStart()) {
+				videos[change.channel].ResetTrack();
+			}
+
+			break;
+		}			
+		case ConstantApplication::ConfigurationType::Global:
+		{
+			initInnovatrics->Terminate();
+			initInnovatrics->Init();
+			break;
+		}
+		default:
+			break;
+		}
+		});
+
+	subscriptionChange.clear();
+}
+
+void MainForm::ObserverPersonOutside()
+{
+	auto personObservable = frmOutputControl->GetPersonOurside()
+		.map([](int id) {
+		return id;
+			});
+
+	auto subscriptionPerson = personObservable
+		.subscribe([this](int id) {
+		frmControlEntry->RemoveId(id);
+			});
+
+	subscriptionPerson.clear();
+}
+
 void MainForm::DefinePipe(PersonSpecification specPerson)
 {	
 	int channel = atoi(specPerson.channel);
 	channel -= 1;
 
 	int id = atoi(specPerson.id);
-	if (id == 0 && specPerson.task != ENROLL_PERSON)
+	if (id == 0 && specPerson.task != ENROLL_PERSON && 
+		specPerson.task != CONTROL_ENTRY_TRACK0 && 
+		specPerson.task != CONTROL_ENTRY_TRACK1 && 
+		specPerson.task != CONTROL_ENTRY_TRACK2)
 	{		
 		frmUnidentified->SetPersonUnidentified(specPerson);
 	}
@@ -791,6 +897,9 @@ void MainForm::DefinePipe(PersonSpecification specPerson)
 		case CONTROL_ENTRY_TRACK1:
 			frmTracking[1].SetPersonTemp(specPerson);
 			break;		
+		case CONTROL_ENTRY_TRACK2:
+			frmTracking[2].SetPersonTemp(specPerson);
+			break;
 		default:
 			break;
 		}
@@ -805,17 +914,18 @@ void MainForm::DefinePipe(PersonSpecification specPerson)
 void MainForm::CloseConnections()
 {
 	for (int i = 0; i < MAX_CHANNELS; i++) {
-		if (videos[i].GetTask() == CONTROL_ENTRY_TRACK0 || 
-			videos[i].GetTask() == CONTROL_ENTRY_TRACK1 || 
-			videos[i].GetTask() == CONTROL_ENTRY)
+		if (videos[i].GetTask() != -1)
 		{
 			videos[i].CloseConnection();
 		}
 
 	}
 }
+
 void MainForm::ShowAppLog(bool* p_open)
 {
 	ImGui::SetNextWindowSize(ImVec2(300, 200), ImGuiCond_FirstUseEver);
 	ASSInterface::ImGuiLog::Draw("WhoIs: Log", p_open);
 }
+
+

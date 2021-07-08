@@ -7,14 +7,14 @@ namespace ASSInterface {
 
 	struct EntitySpecification {
 		std::string id, name, lastName, dataImage, 
-			identification, type, logEnroll, 
+			identification, type, type1, type2, logEnroll, 
 			logEntry, dataDocObverse, dataDocReverse;
 		long date;
 	};
 
 	struct EntityImage {
-		std::string id, data1, data2, data3, data4, 
-			data5, data6, data7, data8, data9, data10;
+		std::string id, data;
+		int index;
 	};
 
 	struct EntityEvent {
@@ -36,7 +36,8 @@ namespace ASSInterface {
 		inside = 2,
 		outside = 3,
 		entryWithoutPermission = 4,
-		detectedInside = 5
+		detectedInside = 5,
+		unidentified = 6
 	};
 
 	class Database {
@@ -48,6 +49,7 @@ namespace ASSInterface {
 		virtual void Add(const EntityLicence& ent) = 0;
 		virtual void Update(const EntitySpecification& ent) = 0;
 		virtual void Update(const EntityImage& ent) = 0;
+		virtual void Update(const EntityImage& ent, int newIndex) = 0;
 		virtual void Update(const EntityEvent& ent) = 0;
 		virtual void Update(const EntityLicence& ent) = 0;
 		virtual void Delete(const std::string id) = 0;
@@ -59,11 +61,17 @@ namespace ASSInterface {
 		virtual void GetImages(const std::string id) = 0;
 		virtual void GetEvents(const std::string id) = 0;		
 		virtual void GetLicences(const std::string id) = 0;
+		virtual void GetByType(const std::string type) = 0;
+		virtual void GetByName(const std::string name) = 0;
+		virtual void GetByLastName(const std::string lastName) = 0;
 		virtual const EntitySpecification& GetEntitySpecification() const = 0;
 		virtual const EntityImage& GetEntityImage() const = 0;
 		virtual const EntityEvent& GetEntityEvent() const = 0;
 		virtual const EntityLicence& GetEntityLicence() const = 0;
+		virtual inline const std::vector<EntitySpecification> ListFind() const = 0;
+		virtual inline const std::vector<EntityImage> ListImages() const = 0;
 		virtual void Drop() = 0;
+		virtual void DeleteImage(const EntityImage& ent) = 0;
 		static Ref<Database> Create();
 	};
 }

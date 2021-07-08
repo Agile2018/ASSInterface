@@ -323,6 +323,14 @@ void FrameVideo::RunFlow()
 	}
 }
 
+void FrameVideo::PlayFlow()
+{
+	m_Streamer->Play();
+	if (!m_Streamer->IsCorrectStart()) {
+		StopThread(threadInit);
+	}
+}
+
 void FrameVideo::InitTexture() {
 	ASS_PROFILE_FUNCTION();
 
@@ -378,7 +386,7 @@ void FrameVideo::ObserverIdentify()
 	subscriptionIdentify.clear();
 }
 
-void FrameVideo::SetSpecificationPerson(ASSInterface::IdentitySpecification& specIdentify)
+void FrameVideo::SetSpecificationPerson(ASSInterface::IdentitySpecification specIdentify)
 {
 	
 	std::string currentDate = ASSInterface::DateTime::Now();
@@ -396,6 +404,7 @@ void FrameVideo::SetSpecificationPerson(ASSInterface::IdentitySpecification& spe
 	strcpy(personSpecification.match, std::to_string(specIdentify.match).c_str());
 	strcpy(personSpecification.channel, std::to_string(specIdentify.channel).c_str());
 	strcpy(personSpecification.type, specIdentify.gallery.c_str());	
+	strcpy(personSpecification.type1, specIdentify.gallery1.c_str());
 	strcpy(personSpecification.date, currentDate.c_str());
 
 	if (!specIdentify.imageDB.empty())
@@ -434,6 +443,12 @@ void FrameVideo::SetSpecificationPerson(ASSInterface::IdentitySpecification& spe
 			&specIdentify.templateData[0] + sizeTemplate);		
 	}
 		
+	if (!specIdentify.faceSerialized.empty())
+	{
+		personSpecification.faceSerialized.assign(&specIdentify.faceSerialized[0],
+			&specIdentify.faceSerialized[0] + specIdentify.faceSerialized.size());
+	}
+
 	shootSpecPerson.on_next(personSpecification);
 	
 }
@@ -445,6 +460,7 @@ void FrameVideo::CreateBuffer()
 
 	if (!dataImage.empty())
 	{
+		
 		m_Texture = ASSInterface::Texture2D::Create(&dataImage[0], m_Streamer->GetWidth(),
 			m_Streamer->GetHeight(), m_Streamer->GetChannels());
 		ASSInterface::FramebufferSpecification fbSpec;
@@ -452,7 +468,7 @@ void FrameVideo::CreateBuffer()
 		fbSpec.Height = m_Streamer->GetHeight();
 		m_Framebuffer = ASSInterface::Framebuffer::Create(fbSpec);
 		m_CameraController.OnResize((float)m_Streamer->GetWidth(), (float)m_Streamer->GetHeight());		
-
+		
 	}
 
 }
@@ -463,7 +479,15 @@ void FrameVideo::StopThread(const std::string& tname) {
 
 		if (m_Streamer->GetSourceFlow() == 3)
 		{
-			m_Streamer->Stop();
+			//m_Streamer->Stop();
+			ThreadMap::const_iterator it = tm_.find(tname);
+			if (it != tm_.end()) {
+				it->second.std::thread::~thread(); // thread not killed
+				tm_.erase(tname);
+				m_Streamer->Stop();
+				ASS_INFO("STOP FLOW DEVICE");
+			}
+			
 		}
 		else
 		{
@@ -484,8 +508,7 @@ void FrameVideo::StopThread(const std::string& tname) {
 			it->second.std::thread::~thread(); 
 			tm_.erase(tname);			
 		}
-
-		*messageStatus = "File video incorrect or not exist.";
+		
 	}
 					
 }
@@ -496,7 +519,11 @@ void FrameVideo::StartThread(const std::string& tname, bool runFlow) {
 
 		if (isBufferCreate && m_Streamer->GetSourceFlow() == 3)
 		{
-			m_Streamer->Play();
+			//m_Streamer->Play();
+			
+			std::thread thrd = std::thread(&FrameVideo::PlayFlow, this);
+			thrd.detach();
+			tm_[tname] = std::move(thrd);
 		}
 		else
 		{
@@ -508,7 +535,7 @@ void FrameVideo::StartThread(const std::string& tname, bool runFlow) {
 	}
 	else
 	{
-		*messageStatus = "File video incorrect or not exist.";
+		*messageStatus = "File video incorrect or not exist.";		
 	}
 	
 }

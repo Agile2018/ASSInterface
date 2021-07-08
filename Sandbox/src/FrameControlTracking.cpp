@@ -135,21 +135,28 @@ void FrameControlTracking::ShowDetected(int index)
 }
 
 void FrameControlTracking::SetNewsDetected()
-{
-	bool flagExist = true;
+{	
 	std::lock_guard lock(mutexList);
 	for (int i = 0; i < listDetectedTemp.size(); i++)
 	{
-		for (int j = 0; j < listDetected.size(); j++)
+		bool flagExist = true;
+
+		std::string strIdTemp = &listDetectedTemp[i].id[0];		
+		int idTemp = atoi(strIdTemp.c_str());
+
+		if (idTemp != 0)
 		{
-			std::string idDetect = &listDetected[j].id[0];
-			std::string idTemp = &listDetectedTemp[i].id[0];
-			int idIntDet = atoi(idDetect.c_str());
-			int idIntTemp = atoi(idTemp.c_str());
-			if (idIntDet == idIntTemp)
+			for (int j = 0; j < listDetected.size(); j++)
 			{
-				flagExist = false;
+				std::string strIdDetect = &listDetected[j].id[0];			
+				int idDetected = atoi(strIdDetect.c_str());				
+
+				if (idDetected == idTemp)
+				{
+					flagExist = false;
+				}
 			}
+
 		}
 
 		if (flagExist)
@@ -158,15 +165,29 @@ void FrameControlTracking::SetNewsDetected()
 				&listDetectedTemp[i].bufferCapture[0],
 				(int)listDetectedTemp[i].bufferCapture.size(),
 				SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
-			listDetectedTemp[i].txtGallery = SOIL_load_OGL_texture_from_memory(
-				&listDetectedTemp[i].bufferGallery[0],
-				(int)listDetectedTemp[i].bufferGallery.size(),
-				SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+
+			if (listDetectedTemp[i].bufferGallery.size() > 0)
+			{
+				listDetectedTemp[i].txtGallery = SOIL_load_OGL_texture_from_memory(
+					&listDetectedTemp[i].bufferGallery[0],
+					(int)listDetectedTemp[i].bufferGallery.size(),
+					SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+			}
+			
+			listDetectedTemp[i].bufferCapture.clear();
+			listDetectedTemp[i].bufferGallery.clear();
+			listDetectedTemp[i].bufferDocumentObverse.clear();
+			listDetectedTemp[i].bufferDocumentReverse.clear();
+			listDetectedTemp[i].faceSerialized.clear();
 
 			if (listDetectedTemp[i].txtCapture != 0 && listDetectedTemp[i].txtGallery != 0)
 			{
 				listDetected.push_back(listDetectedTemp.at(i));			
 				SaveEventTrack(listDetectedTemp.at(i));
+			}
+			else if (listDetectedTemp[i].txtCapture != 0) {
+				listDetected.push_back(listDetectedTemp.at(i));
+				SaveEventTrackUnidentified(listDetectedTemp.at(i));
 			}
 		}
 	}
@@ -182,6 +203,18 @@ void FrameControlTracking::SaveEventTrack(PersonSpecification& personSpec)
 	entEvent.date = ASSInterface::DateTime::NowToLong();
 	entEvent.type = ASSInterface::EventAppType::detectedInside;
 	entEvent.description = "Person detected on channel: " + channel;
+
+	dbMongo->Add(entEvent);
+}
+
+void FrameControlTracking::SaveEventTrackUnidentified(PersonSpecification& personSpec)
+{
+	std::string channel = &personSpec.channel[0];
+	ASSInterface::EntityEvent entEvent;
+	entEvent.id = -1;
+	entEvent.date = ASSInterface::DateTime::NowToLong();
+	entEvent.type = ASSInterface::EventAppType::unidentified;
+	entEvent.description = "Person unidentified detected on channel: " + channel;
 
 	dbMongo->Add(entEvent);
 }

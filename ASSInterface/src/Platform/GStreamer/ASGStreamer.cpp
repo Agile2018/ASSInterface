@@ -68,18 +68,14 @@ namespace ASSInterface {
 			{
 				ASS_ERROR("File config empty");
 				const char* err = "File config empty";
-				ASS_ERROR_PROFILE_SCOPE("ASGStreamer::ASGStreamer", err);
-				
+				ASS_ERROR_PROFILE_SCOPE("ASGStreamer::ASGStreamer", err);				
 			}
-
 		}
 		else
 		{
 			ASS_ERROR("File not exists.");
 			const char* err = "File not exists.";
-			ASS_ERROR_PROFILE_SCOPE("ASGStreamer::ASGStreamer", err);
-			
-			
+			ASS_ERROR_PROFILE_SCOPE("ASGStreamer::ASGStreamer", err);						
 		}
 
 	}
@@ -335,7 +331,7 @@ namespace ASSInterface {
 			/*description = g_strdup_printf(
 				"v4l2src device=%s "
 				"! decodebin ! videoconvert "
-				"! video/x-raw, format=(string)I420  "
+				"! video/x-raw, format=(string)I420, width=(int)640, height=(int)480 "
 				"! jpegenc "
 				"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
 				descriptionFlow.c_str()
@@ -343,7 +339,7 @@ namespace ASSInterface {
 			description = g_strdup_printf(
 				"ksvideosrc device-index=%s "
 				"! decodebin ! videoconvert "
-				"! video/x-raw, format=(string)YUY2 "
+				"! video/x-raw, format=(string)YUY2, width=(int)640, height=(int)480 "
 				"! jpegenc quality=100 "
 				"! appsink name=sink emit-signals=true sync=true max-buffers=1 drop=true",
 				descriptionFlow.c_str()
@@ -389,7 +385,7 @@ namespace ASSInterface {
 
 		GstBuffer* buffer = gst_sample_get_buffer(sample);
 		GstCaps* caps = gst_sample_get_caps(sample);
-		ASS_INFO("Caps flow of image: {0}", gst_caps_to_string(caps));
+		//ASS_INFO("Caps flow of image: {0}", gst_caps_to_string(caps));
 		GstStructure* structure = gst_caps_get_structure(caps, 0);
 		int width = g_value_get_int(gst_structure_get_value(structure, "width"));
 		int height = g_value_get_int(gst_structure_get_value(structure, "height"));
@@ -511,7 +507,7 @@ namespace ASSInterface {
 		if (indexChannel == channel) {
 			
 			ASS_PROFILE_FUNCTION();
-			clock_t timeStart1 = clock();
+			//clock_t timeStart1 = clock();
 						
 			std::vector<unsigned char> dataRawImage(data, data + size);
 			
@@ -533,10 +529,10 @@ namespace ASSInterface {
 			
 			BranchVideo(data, size);
 			
-			clock_t duration1 = clock() - timeStart1;
+			/*clock_t duration1 = clock() - timeStart1;
 			int durationMs1 = int(1000 * ((float)duration1) / CLOCKS_PER_SEC);
 
-			ASS_INFO("Time Load Image {0}", durationMs1);
+			ASS_INFO("Time Load Image {0}", durationMs1);*/
 		}
 		
 	}
@@ -612,20 +608,28 @@ namespace ASSInterface {
 	void ASGStreamer::BranchVideo(unsigned char* data, int size)
 	{
 		
-		int width, height;
+		int width = 0, height = 0, lenght = 0;
 
 		unsigned char* copyFlow = new unsigned char[size];
 		memcpy(copyFlow, data, size);
 
 		unsigned char* dataTemp = SOIL_load_image_from_memory(copyFlow,
-			size, &width, &height, &m_Channels, SOIL_LOAD_RGB);
+			size, &width, &height, &m_Channels, SOIL_LOAD_AUTO);
 
-		m_SizeImage = width * height * m_Channels;
-		
-		mtxTexture.lock();
-		dataImage.clear();
-		dataImage.assign(dataTemp, dataTemp + m_SizeImage);
-		mtxTexture.unlock();
+		if (m_SizeImage == 0)
+		{
+			m_SizeImage = width * height * m_Channels;
+		}
+
+		lenght = width * height * m_Channels;
+		if (lenght == m_SizeImage)
+		{
+			mtxTexture.lock();
+			dataImage.clear();			
+			dataImage.assign(dataTemp, dataTemp + m_SizeImage);
+			mtxTexture.unlock();
+		}
+						
 		SOIL_free_image_data(dataTemp);
 		delete[] copyFlow;
 

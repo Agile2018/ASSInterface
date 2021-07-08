@@ -23,12 +23,12 @@ namespace ASSInterface {
 			CV_Assert(detector);
 		}
 
-		void detect(const cv::Mat& Image, std::vector<cv::Rect>& objects) //CV_OVERRIDE
+		void detect(const cv::Mat& Image, std::vector<cv::Rect>& objects) CV_OVERRIDE
 		{
 			Detector->detectMultiScale(Image, objects, scaleFactor, minNeighbours, 0, minObjSize, maxObjSize);
 		}
 
-		virtual ~CascadeDetectorAdapter() //CV_OVERRIDE
+		virtual ~CascadeDetectorAdapter() CV_OVERRIDE
 		{}
 
 	private:
@@ -54,10 +54,11 @@ namespace ASSInterface {
 		virtual inline bool IsTrackFinish() override { return true; };
 		virtual inline void SetTask(int value) override { task = value; };
 		virtual inline int GetTask() override { return 0; };
+		
 	private:
 		virtual void CreateTemplate(void* face, DetectSpecification& specDetect) override;
 		virtual void Crop(void* face, CropSpecification& specCrop) override;
-				
+		virtual void ResetParams() override;
 	private:		
 		DetectionBasedTracker* Detector = nullptr;
 		Mat referenceFrame;

@@ -39,6 +39,8 @@ namespace ASSInterface {
 			const override { return observableSpecIdentify; }
 		virtual std::any GetExecuteTask() override { return innoTask; };
 		virtual inline void CloseConnection() override { innoTask->CloseConnection(); }
+		virtual inline void ResetTask() override { innoTask->ResetParameters(); };
+		virtual inline void ResetTrack() override { trackingInno->ResetParams(); };
 	private:
 		virtual char* DescriptionFlow(int optionFlow, std::string descriptionFlow) override;
 		virtual std::string ConvertBackslashToSlash(std::string input) override;

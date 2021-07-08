@@ -1,7 +1,9 @@
 #pragma once
 
 #include "ASSInterface.h"
-#include "iface.h"
+//#include "iface.h"
+//#include "iface_common.h"
+#include "icao_status.h"
 #include "tbb/tbb.h"
 
 using namespace tbb;
@@ -12,14 +14,19 @@ namespace ASSInterface {
 	class InnoDetection : public Detection {
 	public:
 		InnoDetection(int channel);
+		InnoDetection();
 		~InnoDetection();
 		virtual void BuildTemplatesFromPersonFiles(std::vector<std::string> files) override;
+		virtual void BuildTemplatesFromPersonFiles(std::vector<std::string> files, 
+			int task, int id, int index = -1) override;
+
 		virtual void Import(std::vector<std::string> files) override;
 		virtual void ResetParameters() override;
+		virtual std::vector<char> SerializeEntity(void* face) override;
 		virtual inline const Rx::observable<std::vector<DetectSpecification>> Get() const override { return observableSpecDetected; };
 		virtual inline const Rx::observable<concurrent_vector<DetectSpecification>> GetConcurrent() const override { return observableConcurrentSpecDetected; }
 	private:
-		std::vector<void*> Detect();
+		std::vector<void*> Detect(std::vector<float>& icaoScore);
 		void Crop(void* face, CropSpecification& specCrop);
 		void SetParameters();		
 		void ParallelApply(std::vector<std::string> files, size_t n);
@@ -35,12 +42,14 @@ namespace ASSInterface {
 			std::vector<DetectSpecification>& detectTemplates);
 		std::vector<CropSpecification> CropValidateTemplates(
 			std::vector<void*> faces, std::vector<std::vector<int>> validate);
+		std::vector<char> SerializeEntity(std::vector<void*> faces, int index);		
 		void SendValidDetection(std::vector<DetectSpecification> templatesGet,
 			std::vector<std::vector<int>> valid, 
-			std::vector<CropSpecification> cropValid, int task);
-		void BuildSpecificationForIdentify(int task);
+			std::vector<CropSpecification> cropValid, 
+			int task, std::vector<char> faceSerialized, std::vector<float> icaoScore, int id = -1, int idx = -1);
+		void BuildSpecificationForIdentify(int task, int id = -1, int index = -1);
 		void BuildTemplateOfFile(std::string file);		
-
+		float ICAOFeature(void* face);
 	private:		
 		Rx::subject<std::vector<DetectSpecification>> specSubject;
 		Rx::observable<std::vector<DetectSpecification>> observableSpecDetected = specSubject.get_observable();

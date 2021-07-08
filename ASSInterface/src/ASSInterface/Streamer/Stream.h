@@ -33,6 +33,8 @@ namespace ASSInterface {
 		virtual inline const Rx::observable<IdentitySpecification> GetIdentify() const = 0;		
 		virtual std::any GetExecuteTask() = 0; 
 		virtual inline void CloseConnection() = 0;
+		virtual inline void ResetTask() = 0;
+		virtual inline void ResetTrack() = 0;
 	private:
 		virtual char* DescriptionFlow(int optionFlow, std::string descriptionFlow) = 0;
 		virtual std::string ConvertBackslashToSlash(std::string input) = 0;

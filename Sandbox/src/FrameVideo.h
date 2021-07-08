@@ -19,8 +19,7 @@ public:
 	void StartThread(const std::string& tname, bool runFlow);
 	void Init(int channel);
 	inline bool GetFlowRunning() { return flowRunning; }
-	inline const std::string GetNameThreadRun() { return threadRun; }
-	//inline std::vector<unsigned char> GetDataRaw() { return m_Streamer->GetDataRaw(); }
+	inline const std::string GetNameThreadRun() { return threadRun; }	
 	inline int GetWidthImage() { return m_Streamer->GetWidth(); }
 	inline int GetHeightImage() { return m_Streamer->GetHeight(); }	
 	inline void SetMessageStatus(std::string* message) { messageStatus = message; }
@@ -34,13 +33,16 @@ public:
 	ASSInterface::Ref<ASSInterface::ExecuteTask> GetExecuteTask();
 	inline void CloseConnection() { m_Streamer->CloseConnection(); }
 	inline std::vector<unsigned char> GetDataTexture() {return m_Streamer->GetDataTexture(); };
+	inline void ResetTask() { m_Streamer->ResetTask(); }
+	inline void ResetTrack() { m_Streamer->ResetTrack(); }
 private:
 	void RefreshBoxes();
 	void RunFlow();
+	void PlayFlow();
 	void CreateBuffer();
 	void InitTexture();
 	void ObserverIdentify();
-	void SetSpecificationPerson(ASSInterface::IdentitySpecification& specIdentify);
+	void SetSpecificationPerson(ASSInterface::IdentitySpecification specIdentify);
 private:
 	const std::string threadInit = "thrinit";
 	const std::string threadRun = "thrrun";

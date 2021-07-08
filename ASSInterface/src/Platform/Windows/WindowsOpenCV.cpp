@@ -6,8 +6,6 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 
-//#include <opencv2/core/parallel/backend/parallel_for.tbb.hpp>
-
 namespace ASSInterface {
 	WindowsOpenCV::WindowsOpenCV()
 	{
@@ -300,4 +298,89 @@ namespace ASSInterface {
 		//std::vector<unsigned char> imgJPG = ImenCode(imgData, height, width);
 		//WriteImage(imgData, height, width);
 	}
+	
+	void WindowsOpenCV::CaptureDocument(unsigned char* dataImage, int* cols, 
+		int* rows, std::vector<unsigned char>& bufferImg) //std::string& fileName
+	{
+		cv::Mat src_gray;
+		int thresh = 100;		
+		int width = 0, height = 0, index = 0;
+
+		try
+		{
+			
+			cv::Mat src = cv::Mat(*rows, *cols, CV_8UC3);
+			src.data = dataImage;
+
+			cv::cvtColor(src, src_gray, cv::COLOR_BGR2GRAY);
+			cv::blur(src_gray, src_gray, cv::Size(3, 3));
+
+			cv::Mat canny_output;
+			cv::Canny(src_gray, canny_output, thresh, thresh * 2);
+
+			std::vector<std::vector<cv::Point>> contours;
+			std::vector<cv::Vec4i> hierarchy;
+			cv::findContours(canny_output, contours, hierarchy, cv::RetrievalModes::RETR_EXTERNAL,
+				cv::ContourApproximationModes::CHAIN_APPROX_TC89_KCOS);
+			//cv::Mat drawing = cv::Mat::zeros(canny_output.size(), CV_8UC3);
+			//cv::Scalar color = cv::Scalar(255, 255, 255);
+			concurrent_vector<std::vector<cv::Point>> concurrentContours;
+			std::copy(&contours[0], &contours[0] + contours.size(), concurrentContours.grow_by(contours.size()));
+
+			parallel_for(blocked_range<size_t>(0, concurrentContours.size()),
+				[&width, &height, &index, concurrentContours](const blocked_range<size_t>& r) {
+					for (size_t i = r.begin(); i != r.end(); ++i) {
+						cv::Rect rect = cv::boundingRect(concurrentContours[i]);
+						if (rect.width > width && rect.height > height)
+						{
+							width = rect.width;
+							height = rect.height;
+							index = (int)i;
+
+						}
+					}
+				}
+			);
+			
+			*cols = width;
+			*rows = height;
+
+			cv::Rect rectMax = cv::boundingRect(contours[index]);
+			cv::Mat cropImg = src(rectMax);
+
+			std::vector<int> compression_params;
+			compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
+			compression_params.push_back(100);
+
+			cv::cvtColor(cropImg, cropImg, cv::COLOR_BGR2RGB);
+			bool result = cv::imencode(".jpg", cropImg,
+				bufferImg, compression_params); 
+			if (!result)
+			{
+				ASS_ERROR_PROFILE_SCOPE("WindowsOpenCV::CaptureDocument", "cv::imencode");				
+			}
+			
+			/*
+			
+			cv::imwrite(fileName, cropImg);*/
+			
+			/*std::vector<uchar> buffer;
+			#define MB 1024*1024
+			buffer.resize(200 * MB);
+			cv::imencode(".png", image, buffer);*/
+
+			/*src.release();
+			src_gray.release();
+			canny_output.release();
+			cropImg.release();*/
+		}
+		catch (cv::Exception& ex) 
+		{
+			ASS_ERROR_PROFILE_SCOPE("WindowsOpenCV::CaptureDocument", ex.what());
+			
+		}
+				
+	}
+	
 }
+

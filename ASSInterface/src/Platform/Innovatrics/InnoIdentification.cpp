@@ -105,10 +105,19 @@ namespace ASSInterface {
 	void InnoIdentification::CloseConnection()
 	{
 		int errorCode = IENGINE_E_NOERROR;
-		errorCode = IEngine_FreeUser(userEnroll);
-		CheckError("InnoIdentification::CloseConnection", errorCode);
-		errorCode = IEngine_CloseConnection(handleConnect);
-		CheckError("InnoIdentification::CloseConnection", errorCode);
+
+		if (userEnroll != nullptr)
+		{
+			errorCode = IEngine_FreeUser(userEnroll);
+			CheckError("InnoIdentification::CloseConnection", errorCode);
+		}
+		
+		if (handleConnect != nullptr)
+		{
+			errorCode = IEngine_CloseConnection(handleConnect);
+			CheckError("InnoIdentification::CloseConnection", errorCode);
+		}
+		
 	}
 
 	void InnoIdentification::Enroll(const unsigned char* tpt,
@@ -141,6 +150,49 @@ namespace ASSInterface {
 		}
 				
 		ClearEnroll();
+	}
+
+	void InnoIdentification::EnrollImport(const unsigned char* tpt, int size, 
+		const unsigned char* data, int length, int* id)
+	{
+		int errorCode = IENGINE_E_NOERROR;
+
+		IENGINE_USER user = IEngine_InitUser();
+
+		try
+		{
+
+			errorCode = IEngine_SelectConnection(handleConnect);
+			CheckError("InnoIdentification::EnrollImport", errorCode);
+			if (errorCode == IENGINE_E_NOERROR) {
+				
+				errorCode = IEngine_SetCustomData(user, data, length);
+				CheckError("InnoIdentification::EnrollImport", errorCode);
+				if (errorCode == IENGINE_E_NOERROR) {
+					errorCode = IEngine_AddFaceTemplate(user, tpt, size);
+					CheckError("InnoIdentification::EnrollImport", errorCode);
+					if (errorCode == IENGINE_E_NOERROR) {
+						
+						errorCode = IEngine_RegisterUser(user, id);
+						CheckError("InnoIdentification::EnrollImport", errorCode);
+
+					}
+				}
+				
+			}
+			
+		}
+		catch (const std::exception& ex)
+		{
+			ASS_ERROR_PROFILE_SCOPE("InnoIdentification::EnrollImport",
+				ex.what());
+		}
+
+
+		errorCode = IEngine_ClearUser(user);
+		CheckError("InnoIdentification::EnrollImport", errorCode);
+		errorCode = IEngine_FreeUser(user);
+		CheckError("InnoIdentification::EnrollImport", errorCode);
 	}
 
 	void InnoIdentification::AddTemplate(const unsigned char* tpt, int size)
@@ -178,6 +230,12 @@ namespace ASSInterface {
 			if (errorCode == IENGINE_E_NOERROR) {
 				errorCode = IEngine_AddFaceTemplate(user, tpt, size);
 				CheckError("InnoIdentification::AddTemplate", errorCode);
+				if (errorCode == IENGINE_E_NOERROR) {
+					errorCode = IEngine_UpdateUser(user, id);
+					CheckError("InnoIdentification::AddTemplate", errorCode);
+				}
+				
+				
 			}
 		}
 		errorCode = IEngine_ClearUser(user);
@@ -302,7 +360,8 @@ namespace ASSInterface {
 					errorCode = IEngine_GetParameter(CFG_BEST_CANDIDATES_COUNT, &bestCandidates);
 					
 					errorCode = IEngine_FindUser(user, id, score);					
-					CheckError("InnoIdentification::Find", errorCode);													
+					CheckError("InnoIdentification::Find", errorCode);		
+					
 				}
 					
 
@@ -357,6 +416,157 @@ namespace ASSInterface {
 		errorCode = IEngine_FreeUser(user2);
 		CheckError("InnoIdentification::Match", errorCode);
 
+	}
+
+	int InnoIdentification::GetFaceCount(int id)
+	{
+		int errorCode = IENGINE_E_NOERROR, count = 0;
+
+		IENGINE_USER user = IEngine_InitUser();
+
+		try
+		{
+			errorCode = IEngine_SelectConnection(handleConnect);
+			CheckError("InnoIdentification::GetFaceCount", errorCode);
+			if (errorCode == IENGINE_E_NOERROR) {
+				errorCode = IEngine_GetUser(user, id);
+				CheckError("InnoIdentification::GetFaceCount", errorCode);
+				if (errorCode == IENGINE_E_NOERROR) {
+					
+					errorCode = IEngine_GetFaceCount(user, &count);
+					CheckError("InnoIdentification::GetFaceCount", errorCode);
+					
+				}
+			}
+			
+		}
+		catch (const std::exception& ex)
+		{
+			ASS_ERROR_PROFILE_SCOPE("InnoIdentification::GetFaceCount",
+				ex.what());
+		}
+
+		errorCode = IEngine_ClearUser(user);
+		CheckError("InnoIdentification::GetFaceCount", errorCode);
+		errorCode = IEngine_FreeUser(user);
+		CheckError("InnoIdentification::GetFaceCount", errorCode);
+
+		return count;
+	}
+
+	void InnoIdentification::SetCustomData(const unsigned char* data, int length)
+	{
+		int errorCode = IENGINE_E_NOERROR;
+
+		errorCode = IEngine_SelectConnection(handleConnect);
+		CheckError("InnoIdentification::SetCustomData", errorCode);
+		if (errorCode == IENGINE_E_NOERROR) {
+			try
+			{
+				errorCode = IEngine_SetCustomData(userEnroll, data, length);
+				CheckError("InnoIdentification::SetCustomData", errorCode);				
+			}
+			catch (const std::exception& ex)
+			{
+				ASS_ERROR_PROFILE_SCOPE("InnoIdentification::SetCustomData",
+					ex.what());
+			}
+
+		}
+	}
+
+	void InnoIdentification::GetFaceQuality(int id, int index, int* quality)
+	{
+		int errorCode = IENGINE_E_NOERROR;
+
+		IENGINE_USER user = IEngine_InitUser();
+
+		try
+		{
+			errorCode = IEngine_SelectConnection(handleConnect);
+			CheckError("InnoIdentification::GetFaceQuality", errorCode);
+			if (errorCode == IENGINE_E_NOERROR) {
+				errorCode = IEngine_GetUser(user, id);
+				CheckError("InnoIdentification::GetFaceQuality", errorCode);
+				if (errorCode == IENGINE_E_NOERROR) {
+
+					errorCode = IEngine_GetFaceQuality(user, index, quality);
+					CheckError("InnoIdentification::GetFaceQuality", errorCode);
+
+				}
+			}
+
+		}
+		catch (const std::exception& ex)
+		{
+			ASS_ERROR_PROFILE_SCOPE("InnoIdentification::GetFaceQuality",
+				ex.what());
+		}
+
+		errorCode = IEngine_ClearUser(user);
+		CheckError("InnoIdentification::GetFaceQuality", errorCode);
+		errorCode = IEngine_FreeUser(user);
+		CheckError("InnoIdentification::GetFaceQuality", errorCode);
+
+		
+	}
+
+	void InnoIdentification::RemoveFace(int id, int index)
+	{
+		int errorCode = IENGINE_E_NOERROR;
+		IENGINE_USER user = IEngine_InitUser();
+
+		errorCode = IEngine_SelectConnection(handleConnect);
+		CheckError("InnoIdentification::RemoveFace", errorCode);
+
+		if (errorCode == IENGINE_E_NOERROR) {
+
+			errorCode = IEngine_GetUser(user, id);
+			CheckError("InnoIdentification::RemoveFace", errorCode);
+			if (errorCode == IENGINE_E_NOERROR) {
+				errorCode = IEngine_RemoveFace(user, index);
+				CheckError("InnoIdentification::RemoveFace", errorCode);
+				if (errorCode == IENGINE_E_NOERROR) {
+					errorCode = IEngine_UpdateUser(user, id);
+					CheckError("InnoIdentification::RemoveFace", errorCode);
+				}
+
+
+			}
+		}
+		errorCode = IEngine_ClearUser(user);
+		CheckError("InnoIdentification::RemoveFace", errorCode);
+		errorCode = IEngine_FreeUser(user);
+		CheckError("InnoIdentification::RemoveFace", errorCode);
+	}
+
+	void InnoIdentification::SetFaceTemplate(int id, int index, const unsigned char* tpt, int length)
+	{
+		int errorCode = IENGINE_E_NOERROR;
+		IENGINE_USER user = IEngine_InitUser();
+
+		errorCode = IEngine_SelectConnection(handleConnect);
+		CheckError("InnoIdentification::SetFaceTemplate", errorCode);
+
+		if (errorCode == IENGINE_E_NOERROR) {
+
+			errorCode = IEngine_GetUser(user, id);
+			CheckError("InnoIdentification::SetFaceTemplate", errorCode);
+			if (errorCode == IENGINE_E_NOERROR) {
+				errorCode = IEngine_SetFaceTemplate(user, index, tpt, length);
+				CheckError("InnoIdentification::SetFaceTemplate", errorCode);
+				if (errorCode == IENGINE_E_NOERROR) {
+					errorCode = IEngine_UpdateUser(user, id);
+					CheckError("InnoIdentification::SetFaceTemplate", errorCode);
+				}
+
+
+			}
+		}
+		errorCode = IEngine_ClearUser(user);
+		CheckError("InnoIdentification::SetFaceTemplate", errorCode);
+		errorCode = IEngine_FreeUser(user);
+		CheckError("InnoIdentification::SetFaceTemplate", errorCode);
 	}
 
 	void InnoIdentification::GetParamsDetectFace()

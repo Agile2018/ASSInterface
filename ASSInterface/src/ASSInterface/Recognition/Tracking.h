@@ -19,6 +19,7 @@ namespace ASSInterface {
 		virtual inline bool IsTrackFinish() = 0;
 		virtual inline void SetTask(int value) = 0;		
 		virtual inline int GetTask() = 0;
+		virtual void ResetParams() = 0;		
 		static Ref<Tracking> CreateInnovatrics(int channel);
 		static Ref<Tracking> CreateOpenCV();		
 	private:

@@ -25,6 +25,7 @@ IncludeDir["TBB"] = "ASSInterface/vendor/TBB/include"
 IncludeDir["CUDA"] = "ASSInterface/vendor/CUDA/include"
 IncludeDir["IDKitSDK"] = "ASSInterface/vendor/Innovatrics/IDKitSDK/include"
 IncludeDir["IFaceSDK"] = "ASSInterface/vendor/Innovatrics/IFaceSDK/include"
+IncludeDir["websocketpp"] = "ASSInterface/vendor/websocketpp/include"
 
 group "Dependencies"
 	include "ASSInterface/vendor/GLFW"
@@ -67,7 +68,8 @@ project "ASSInterface"
 		"%{prj.name}/vendor/CUDA/include/**.h",
 		"%{prj.name}/vendor/CUDA/include/**.hpp",
 		"%{prj.name}/vendor/Innovatrics/IDKitSDK/include/**.h",
-		"%{prj.name}/vendor/Innovatrics/IFaceSDK/include/**.h"
+		"%{prj.name}/vendor/Innovatrics/IFaceSDK/include/**.h",
+		"%{prj.name}/vendor/websocketpp/include/websocketpp/**.hpp"
 	}
 
 	defines
@@ -93,6 +95,7 @@ project "ASSInterface"
 		"%{IncludeDir.CUDA}",
 		"%{IncludeDir.IDKitSDK}",
 		"%{IncludeDir.IFaceSDK}",
+		"%{IncludeDir.websocketpp}",
 		"%{prj.name}/vendor/GStreamer/include",
 		"%{prj.name}/vendor/GStreamer/include/glib-2.0",
 		"%{prj.name}/vendor/GStreamer/include/gstreamer-1.0",
@@ -104,8 +107,7 @@ project "ASSInterface"
 	}
 
 	libdirs 
-	{ 
-		"ASSInterface/vendor/opencv/x64/vc16/lib",
+	{ 		
 		"ASSInterface/vendor/TBB/lib"
 	}
 
@@ -143,7 +145,7 @@ project "ASSInterface"
 		symbols "on"		
 
 		links
-		{						
+		{									
 			"ASSInterface/vendor/TBB/lib/tbb12_debug.lib"
 		}
 
@@ -153,7 +155,7 @@ project "ASSInterface"
 		optimize "on"		
 
 		links
-		{						
+		{									
 			"ASSInterface/vendor/TBB/lib/tbb12.lib"
 		}
 
@@ -163,7 +165,7 @@ project "ASSInterface"
 		optimize "on"		
 
 		links
-		{						
+		{									
 			"ASSInterface/vendor/TBB/lib/tbb12.lib"
 		}
 
@@ -201,6 +203,7 @@ project "Sandbox"
 		"%{IncludeDir.CUDA}",
 		"%{IncludeDir.IDKitSDK}",
 		"%{IncludeDir.IFaceSDK}",
+		"%{IncludeDir.websocketpp}",
 		"ASSInterface/vendor/opencv/include"
 	}	
 

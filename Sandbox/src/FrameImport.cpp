@@ -13,7 +13,7 @@ FrameImport::~FrameImport()
 
 void FrameImport::Show(bool* p_open)
 {
-	static const char* currentItemPersonType = NULL;
+	
 	static bool popup_file_open = false;
 
 	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
@@ -39,15 +39,22 @@ void FrameImport::Show(bool* p_open)
 
 	if (ImGui::Button("File")) {
 				
-		if (currentIndexVideo == -1)
+		if (currentItemPersonType != NULL)
 		{
-			popup_file_open = true;
-			ImGui::SetNextWindowPos(ImGui::GetMousePos());
+			if (currentIndexVideo == -1)
+			{
+				popup_file_open = true;
+				ImGui::SetNextWindowPos(ImGui::GetMousePos());
 
+			}
+			else
+			{
+				OpenFile();
+			}
 		}
 		else
 		{
-			OpenFile();
+			*messageStatus = "Gallery empty.";
 		}
 		
 	}
@@ -125,7 +132,8 @@ void FrameImport::ObserverDetected()
 
 	auto subscriptionTaskDetect = taskDetectedObservable
 		.subscribe([this](concurrent_vector<ASSInterface::DetectSpecification> concurrentDetection) {
-			innoTask->DoTask(concurrentDetection);
+		std::string gallery = &currentItemPersonType[0];
+			innoTask->DoTask(concurrentDetection, gallery);
 		});
 
  	subscriptionTaskDetect.clear();

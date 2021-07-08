@@ -14,6 +14,7 @@ public:
 	inline void SetDatabase(ASSInterface::Ref<ASSInterface::Database> db) { dbMongo = db; }
 	inline void SetMessageStatus(std::string* message) { messageStatus = message; }
 	inline void SetViewChannel(bool* isView) { viewVideo.push_back(isView); }
+	inline void ResetChannel() { currentIndexVideo = -1; }
 private:
 	void OpenFile();
 	void CreateTaskEnroll(int channel);
@@ -29,4 +30,5 @@ private:
 	std::string* messageStatus = nullptr;
 	std::vector<bool*> viewVideo;
 	const char* currentChannel = NULL;
+	const char* currentItemPersonType = NULL;
 };

@@ -3,23 +3,35 @@
 #include <ASSInterface.h>
 #include "data/ConstantApplication.h"
 
+struct ChangeConfiguration {	
+	int channel;
+	ConstantApplication::ConfigurationType type;
+
+	ChangeConfiguration() {
+		channel = -1;
+		type = ConstantApplication::ConfigurationType::None;
+	}
+
+};
+
 class FrameConfiguration {
 public:
 	FrameConfiguration(ASSInterface::LanguageType language);
 	~FrameConfiguration();
-	void ShowParametersFaceProcessing(bool* p_open);
-	void ShowParametersFaceTracking(bool* p_open);
-	void ShowParametersEnrollmentProcessing(bool* p_open);
-	void ShowParametersControlEntryMatch(bool* p_open);
+	void ShowParametersFaceProcessing(bool* p_open, bool change);
+	void ShowParametersFaceTracking(bool* p_open, bool change);
+	void ShowParametersEnrollmentProcessing(bool* p_open, bool change);
+	void ShowParametersControlEntryMatch(bool* p_open, bool change);
 	void ShowParametersChannel(bool* p_open);
 	void ShowParametersBiometric(bool* p_open);
-	void ShowParametersOnthefly(bool* p_open);
 	void ShowParametersDatabase(bool* p_open);
 	void ShowParametersLicence(bool* p_open);
 	inline std::string GetNameDatabase() { return std::string(databaseName); }
 	inline std::string GetConnectDatabase() { return std::string(connectString); }
 	inline void SetDatabase(ASSInterface::Ref<ASSInterface::Database> db) { dbMongo = db; }
 	inline void SetMessageStatus(std::string* message) { messageStatus = message; }
+	inline const Rx::observable<ChangeConfiguration> GetChangeConfig()
+		const { return observableChangeConfig; }
 private:
 	ASSInterface::LanguageType lg;	
 	ASSInterface::Ref<ASSInterface::Configuration> configurationDB;
@@ -32,6 +44,12 @@ private:
 	ASSInterface::Ref<ASSInterface::Configuration> configurationOnTheFly;
 
 	ASSInterface::Ref<ASSInterface::Database> dbMongo;
+	ASSInterface::Ref<ASSInterface::File> managerFile;
+
+	Rx::subject<ChangeConfiguration> specSubject;
+	Rx::observable<ChangeConfiguration> observableChangeConfig = specSubject.get_observable();
+	Rx::subscriber<ChangeConfiguration> shootChangeConfig = specSubject.get_subscriber();
+
 
 	std::string* messageStatus;
 	const char* yesOrno[2] = { "No", "Yes" };
@@ -48,7 +66,7 @@ private:
 	const char* channelNumbers = NULL;
 	const char* savedRecords = NULL;
 	const char* galleries = NULL;
-	int channelType = 0;
+	int channelType = 0; 
 	int id = 0, thrNumber = 1, gpu = 0, mode = 0;
 	const char* multithreadingMode[3] = { "Max parallel", "Min memory", "Single" };
 	const char* cgpu = NULL;
@@ -78,7 +96,7 @@ private:
 	const char* speedTrackDesc = NULL;
 	const char* trackOptimusDesc = NULL;
 
-	int detectionThreshold = 0, similarityThreshold = 0, maxTemplates = -1, minScore = 0, maxScore = 0,
+	int detectionThreshold = 0, similarityThreshold = 0, maxTemplates = -1, minScore = 0, maxScore = 0, duration = 30,
 		gallery = 0, deduplicate = 0, concatenate = 0, concatenateMode = 0;
 	const char* concatenateOptions[2] = { "Auto", "Forced" };
 	const char* galleryDesc = NULL;
@@ -98,7 +116,6 @@ private:
 	void SetParametersTrack();
 	void SetParametersEnroll();
 	void SetParametersEntry();
-	void SetParametersOnTheFly();
 	void PutToolTip(std::string description);
 	void SaveParametersDatabase();
 	void SaveParametersChannel();
@@ -107,7 +124,6 @@ private:
 	void SaveParametersTrack();
 	void SaveParametersEnroll();
 	void SaveParametersEntry();
-	void SaveParametersOnTheFly();
 	void SaveParametersLicence();
 	void DropDatabase();
 	

@@ -23,17 +23,27 @@ namespace ASSInterface {
 		virtual void Add(const EntityLicence& ent) override;
 		virtual void Update(const EntitySpecification& ent) override;
 		virtual void Update(const EntityImage& ent) override;
+		virtual void Update(const EntityImage& ent, int newIndex) override;
 		virtual void Update(const EntityEvent& ent) override;
 		virtual void Update(const EntityLicence& ent) override;
 		virtual void Delete(const std::string id) override;
 		virtual void DeleteImages(const std::string id) override;
+		virtual void DeleteImage(const EntityImage& ent) override;
 		virtual void DeleteEvent(const std::string id) override;
 		virtual void DeleteLicence(const std::string id) override;		
 		virtual const EntitySpecification& GetEntitySpecification() const override { return m_EntitySpec; };
 		virtual const EntityImage& GetEntityImage() const override { return m_EntityImage; };
 		virtual const EntityEvent& GetEntityEvent() const override { return m_EntityEvent; };
 		virtual const EntityLicence& GetEntityLicence() const override { return m_EntityLicence; };
+		virtual inline const std::vector<EntitySpecification> ListFind() const override {
+			return entities;
+		}
+		virtual inline const std::vector<EntityImage> ListImages() const override { 
+			return entitiesImage; };
 		virtual void Get(const std::string id) override;
+		virtual void GetByType(const std::string type) override;
+		virtual void GetByName(const std::string name) override;
+		virtual void GetByLastName(const std::string lastName) override;
 		virtual void GetByDocument(const std::string document) override;
 		virtual void GetImages(const std::string id) override;
 		virtual void GetEvents(const std::string id) override;
@@ -50,6 +60,8 @@ namespace ASSInterface {
 		std::string nameDatabase;
 		std::string connection;
 		EntitySpecification m_EntitySpec;
+		std::vector<EntitySpecification> entities;
+		std::vector<EntityImage> entitiesImage;
 		EntityImage m_EntityImage;
 		EntityEvent m_EntityEvent;
 		EntityLicence m_EntityLicence;

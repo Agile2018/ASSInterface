@@ -72,6 +72,36 @@ namespace ASSInterface {
 	bool WindowsFile::IsFileExists(std::string path)
 	{
 		struct stat buffer;
-		return (stat(path.c_str(), &buffer) == 0);		
+		return (stat(path.c_str(), &buffer) == 0);	
+		
 	}
+
+	bool WindowsFile::SaveConfig()
+	{
+		const std::filesystem::path source = "imgui.ini";
+		const std::filesystem::path target = "imgui_.ini";
+
+		if (IsFileExists("imgui.ini"))
+		{
+			return std::filesystem::copy_file(source, target);
+		}
+		return false;
+		
+	}
+
+	bool WindowsFile::ResetConfig()
+	{
+		if (DelFile("imgui.ini"))
+		{
+			const std::filesystem::path target = "imgui.ini";
+			const std::filesystem::path source = "imgui_.ini";
+			if (IsFileExists("imgui_.ini")) {
+				return std::filesystem::copy_file(source, target);
+			}
+			
+		}
+		return false;
+	}
+
+
 }

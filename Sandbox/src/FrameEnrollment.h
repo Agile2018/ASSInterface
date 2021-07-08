@@ -12,14 +12,13 @@ public:
 	void ShowRAV(bool* p_open, PersonSpecification& personSpec);
 	inline PersonSpecification* GetPersonEnrolled() { return &personSpecificationEnroll; }
 	inline void SetViewChannel(bool* isView) { viewVideo.push_back(isView); }
-	//inline void SetEnabledCapture(bool value) { buttonsCaptureEnroll = value; }
-	//void SetImageToTexture(const std::string& path);
-	//void SetImageToTexture(void* data, uint32_t width, uint32_t height, uint32_t channel);		
+	//inline void SetEnabledCapture(bool value) { buttonsCaptureEnroll = value; }			
 	inline int GetIndexCurrentVideo() { return currentIndexVideo; }	
 	inline void SetDatabase(ASSInterface::Ref<ASSInterface::Database> db) { dbMongo = db; }	
-	void CleanSpecification(int option);
+	void CleanSpecification();
 	inline void SetMessageStatus(std::string* message) { messageStatus = message; }
-	inline void SetInnoTask(ASSInterface::Ref<ASSInterface::ExecuteTask> task) { innoTask = task; }
+	inline void SetInnoTask(ASSInterface::Ref<ASSInterface::ExecuteTask> task) { innoTask = task; ObserverEnroll(); }
+	inline bool GetStateTask() { return innoTask != nullptr; }
 	void ResetChannel();	
 	void ClearTask();
 	inline void ResetButtonVideo() { isVideoButton = false; currentIndexVideo = -1; }
@@ -68,22 +67,26 @@ private:
 	ASSInterface::Ref<ASSInterface::Base64> base64;
 	ASSInterface::Ref<ASSInterface::Database> dbMongo;
 	ASSInterface::Ref<ASSInterface::ExecuteTask> innoTask = nullptr;
-	ASSInterface::Ref<ASSInterface::Detection> innoDetect = nullptr;
+	ASSInterface::Ref<ASSInterface::Detection> innoDetect = nullptr;	
 	ASSInterface::Ref<ASSInterface::Texture2D> txtButtonCapture;
 	ASSInterface::Ref<ASSInterface::Texture2D> txtButtonDelete;		
-	ASSInterface::Ref<ASSInterface::Texture2D> txtDocumentObverse;
-	ASSInterface::Ref<ASSInterface::Texture2D> txtDocumentReverse;
+	//ASSInterface::Ref<ASSInterface::Texture2D> txtDocumentObverse;
+	//ASSInterface::Ref<ASSInterface::Texture2D> txtDocumentReverse;
 	std::vector<bool*> viewVideo;	
 	bool isFileButton = false;	
 	bool isVideoButton = false;
 	bool isEnrollRAV = false;
-	int currentIndexVideo = -1, widthDoc, heightDoc, channelsDoc;
+	int docFace = 1;	
+	int currentIndexVideo = -1, currentIndexVideoDoc = -1;
 	std::string* messageStatus;
 	ASSInterface::LanguageType lg;
 	const char* currentChannel = NULL;
+	const char* currentChannelDoc = NULL;
 	std::vector<PersonSpecification> listDetected;
+	ASSInterface::Ref<ASSInterface::TransformImage> transImage;
 private:
 	void OpenFile();
+	void OpenFileDocument();
 	bool SavePerson(PersonSpecification& personSpec);
 	bool SavePerson();
 	void SaveEventRegister(PersonSpecification& personSpec);

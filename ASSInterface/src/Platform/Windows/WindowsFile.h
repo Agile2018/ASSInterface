@@ -14,6 +14,8 @@ namespace ASSInterface {
 		virtual bool DelFile(std::string fileName) override;
 		virtual void CreateFolder(std::string nameFolder) override;
 		virtual bool IsFileExists(std::string path) override;
+		virtual bool SaveConfig() override;
+		virtual bool ResetConfig() override;
 		virtual const std::string GetFolderConfiguration() const override { return folderConfiguration; };
 	private:
 		const std::string folderConfiguration = "Configuration";

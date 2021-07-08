@@ -7,4 +7,8 @@ namespace ASSInterface {
 	{
 		return CreateRef<InnoDetection>(channel);
 	}
+	Ref<Detection> Detection::CreateInnoDetected()
+	{
+		return CreateRef<InnoDetection>();
+	}
 }

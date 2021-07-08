@@ -16,6 +16,7 @@ namespace ASSInterface {
 		paramsEnroll[AFACE_CONCATENATE_MODE] = concatenateMode;
 		paramsEnroll[AFACE_MIN_SCORE] = minScore;
 		paramsEnroll[AFACE_MAX_SCORE] = maxScore;
+		paramsEnroll[AFACE_DURATION] = duration;
 	}
 
 	JSONConfigEnroll::~JSONConfigEnroll()
@@ -66,7 +67,10 @@ namespace ASSInterface {
 					maxScore = it.value();
 					paramsEnroll[AFACE_MAX_SCORE] = maxScore;
 				}
-
+				if (it.key() == AFACE_DURATION) {
+					duration = it.value();
+					paramsEnroll[AFACE_DURATION] = duration;
+				}
 			}
 		}
 	}
@@ -82,11 +86,13 @@ namespace ASSInterface {
 		maxTemplates = std::any_cast<int>(paramsEnroll[AFACE_MAX_TEMPLATES]);
 		minScore = std::any_cast<int>(paramsEnroll[AFACE_MIN_SCORE]);
 		maxScore = std::any_cast<int>(paramsEnroll[AFACE_MAX_SCORE]);
+		duration = std::any_cast<int>(paramsEnroll[AFACE_DURATION]);
 
 		nlohmann::json jParams = nlohmann::json::object({ {CFG_IFACE_DETECTION_THRESHOLD, detectionThreshold},
 			{CFG_SIMILARITY_THRESHOLD, similarityThreshold}, {AFACE_GALLERY, gallery}, {AFACE_DEDUPLICATE, deduplicate},
 			{AFACE_CONCATENATE, concatenate}, {AFACE_CONCATENATE_MODE, concatenateMode}, 
-			{AFACE_MAX_TEMPLATES, maxTemplates}, {AFACE_MIN_SCORE, minScore}, {AFACE_MAX_SCORE, maxScore} });
+			{AFACE_MAX_TEMPLATES, maxTemplates}, {AFACE_MIN_SCORE, minScore}, {AFACE_MAX_SCORE, maxScore}, 
+			{AFACE_DURATION, duration} });
 
 		std::string jsonToString = jParams.dump();
 		SaveFile(jsonToString);

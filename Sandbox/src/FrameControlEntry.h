@@ -5,18 +5,17 @@
 #include "data/PersonSpecification.h"
 #include "data/ConstantApplication.h"
 
+
 class FrameControlEntry {
 public:
 	FrameControlEntry(ASSInterface::LanguageType language);
 	~FrameControlEntry();
 	void Show(bool* p_open, PersonSpecification& personSpec);
 	inline void SetViewChannel(bool* isView) { viewVideo.push_back(isView); }
-	inline void SetPersonDetected(PersonSpecification pSpec) { 
-		listDetected.push_back(pSpec); 
-		listShowDetected.push_back(pSpec);
-	}
+	void SetPersonDetected(PersonSpecification pSpec);
 	inline void SetPersonTemp(PersonSpecification pSpec) { listDetectedTemp.push_back(pSpec); }
 	inline void SetDatabase(ASSInterface::Ref<ASSInterface::Database> db) { dbMongo = db; }
+	void RemoveId(int id);
 	Rx::subject<int> channelSubject;
 	Rx::observable<int> observableCurrentChannel = channelSubject.get_observable();	
 private:
@@ -34,10 +33,13 @@ private:
 	ASSInterface::Ref<ASSInterface::Database> dbMongo;	
 	std::vector<bool*> viewVideo;
 	int indexRemove = -1;
-	std::vector<PersonSpecification> listDetected;
+	std::vector<int> listDetected;
 	std::vector<PersonSpecification> listShowDetected;
 	std::vector<PersonSpecification> listDetectedTemp;
 	ASSInterface::Ref<ASSInterface::Texture2D> txtButtom;
 	const char* currentChannel = NULL;
 	std::mutex mutexList;	
+
+	//temp
+	
 };

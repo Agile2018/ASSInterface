@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ASSInterface.h"
-#include "iface.h"
+#include "icao_status.h"
 
 namespace ASSInterface {
 	class InnoTracking : public Tracking {
@@ -24,7 +24,7 @@ namespace ASSInterface {
 		virtual inline bool IsTrackFinish() override { return flagFinish; };
 		virtual inline void SetTask(int value) override { task = value; };
 		virtual inline int GetTask() override { return task; };
-
+		virtual void ResetParams() override;
 	private:
 		virtual void CreateTemplate(void* face, DetectSpecification& specDetect) override;
 		virtual void Crop(void* face, CropSpecification& specCrop) override;		
@@ -43,6 +43,7 @@ namespace ASSInterface {
 		void DoHomework(int indexTracked);
 		void CreateFace(int indexTracked);
 		void BuildSpecificationForIdentify(void* face);
+		float ICAOFeature(void* face);
 	private:				
 		Rx::subject<DetectSpecification> specSubject;
 		Rx::observable<DetectSpecification> observableSpecDetect = specSubject.get_observable();
@@ -50,6 +51,7 @@ namespace ASSInterface {
 		ASSInterface::Ref<ASSInterface::ErrorRecognition> errorIFace;
 		ASSInterface::Ref<ASSInterface::Configuration> configurationTrack;
 		ASSInterface::Ref<ASSInterface::Configuration> configurationFace;
+		ASSInterface::Ref<ASSInterface::Detection> innoDetect = nullptr;
 		int widthFrame = 0, heightFrame = 0, elapseFrame = 0;
 		std::vector<unsigned char> flowData;
 		int indexChannel, discoveryFrecuence, timeRedetect, tracking, 
@@ -66,6 +68,6 @@ namespace ASSInterface {
 		float imageCoordinatesFollowed[COORDINATES_X_ALL_IMAGES] = {};
 		float colorRectangle[NUM_TRACKED_OBJECTS] = {};
 		int task = -1;
-		
+		bool isReset = false;
 	};
 }

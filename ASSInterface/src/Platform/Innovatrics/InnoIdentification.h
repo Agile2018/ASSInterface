@@ -14,6 +14,8 @@ namespace ASSInterface {
 		virtual void CloseConnection() override;
 		virtual void Enroll(const unsigned char* tpt,
 			int size, int* id) override;
+		virtual void EnrollImport(const unsigned char* tpt,
+			int size, const unsigned char* data, int length, int* id) override;
 		virtual void AddTemplate(const unsigned char* tpt, int size) override;
 		virtual void AddTemplate(const unsigned char* tpt,
 			int size, int id) override;
@@ -25,6 +27,11 @@ namespace ASSInterface {
 		virtual void Find(const unsigned char* tpt, int size, int* id, int* score) override;
 		virtual void Match(const unsigned char* tpt1, int size1,
 			const unsigned char* tpt2, int size2, int* score) override;
+		virtual int GetFaceCount(int id) override;
+		virtual void SetCustomData(const unsigned char* data, int length) override;
+		virtual void GetFaceQuality(int id, int index, int* quality) override;
+		virtual void RemoveFace(int id, int index) override;
+		virtual void SetFaceTemplate(int id, int index, const unsigned char* tpt, int length) override;
 	private:		
 		void GetParamsDetectFace();
 		void GetParamsEnroll();

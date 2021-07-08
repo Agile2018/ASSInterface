@@ -1,6 +1,7 @@
 #include "FrameControlEntry.h"
 #include "imgui/imgui.h"
 #include <SOIL2.h>
+#include <imgui/imgui.cpp>
 
 FrameControlEntry::FrameControlEntry(ASSInterface::LanguageType language)
 {
@@ -14,8 +15,9 @@ FrameControlEntry::~FrameControlEntry()
 
 void FrameControlEntry::Show(bool* p_open, PersonSpecification& personSpec)
 {
+	
 	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
-
+	
 	if (!ImGui::Begin("Entry Control", p_open))
 	{
 		ImGui::End();
@@ -37,6 +39,32 @@ void FrameControlEntry::Show(bool* p_open, PersonSpecification& personSpec)
 	}
 	
 	ImGui::End();
+}
+
+void FrameControlEntry::SetPersonDetected(PersonSpecification pSpec)
+{
+	listShowDetected.push_back(pSpec);
+	std::string idTemp = &pSpec.id[0];
+	int id = atoi(idTemp.c_str());
+	listDetected.push_back(id);
+}
+
+void FrameControlEntry::RemoveId(int id)
+{
+	int index = -1;
+	for (int i = 0; i < listDetected.size(); i++)
+	{
+		if (listDetected[i] == id)
+		{
+			index = i;
+			break;
+		}
+	}
+	
+	if (index != -1)
+	{
+		listDetected.erase(listDetected.begin() + index);
+	}
 }
 
 void FrameControlEntry::ShowScreenHead()
@@ -96,11 +124,23 @@ void FrameControlEntry::ShowScreenHead()
 void FrameControlEntry::ShowDetected(int index, PersonSpecification& personSpec)
 {	
 	static const char* current_place = NULL;
+	bool changeColor = false;
 	std::string nameScreen = "Detect-" + std::to_string(index);
 	std::string firtsName = &listShowDetected[index].name[0];
 	std::string lastName = &listShowDetected[index].lastname[0];
 	std::string name = firtsName + " " + lastName;
-
+	std::string type = &listShowDetected[index].type[0];
+	if (listShowDetected[index].type1 != NULL)
+	{
+		std::string type1 = &listShowDetected[index].type1[0];
+		if(!type1.empty()) type += "/" + type1;
+		
+		if (std::strcmp(type1.c_str(), ConstantApplication::TYPES_PERSON[1]) == 0) {
+			changeColor = true;
+		}
+	}
+	if(changeColor) ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(255, 0, 0, 100));
+	
 	ImGui::BeginChild(nameScreen.c_str(), ImVec2(0, 150), true);
 	ImFont* font_current = ImGui::GetFont();
 
@@ -133,13 +173,9 @@ void FrameControlEntry::ShowDetected(int index, PersonSpecification& personSpec)
 	ImGui::PushItemWidth(100);
 	ImGui::Text(listShowDetected[index].date);
 
-	/*ImGui::Text("Gallery:"); ImGui::SameLine();
-	ImGui::PushItemWidth(120);
-	ImGui::InputText("##gallery", listShowDetected[index].type, IM_ARRAYSIZE(listShowDetected[index].type),
-		ImGuiInputTextFlags_AllowTabInput | (typePersonReadOnly ? ImGuiInputTextFlags_ReadOnly : 0));*/
 	ImGui::Text(ASSInterface::Label::GetLabel(LBL_GALLERY, lg).c_str()); ImGui::SameLine();
 	ImGui::PushItemWidth(120);
-	ImGui::Text(listShowDetected[index].type);
+	ImGui::Text(type.c_str());
 
 	ImGui::EndGroup();
 
@@ -162,8 +198,12 @@ void FrameControlEntry::ShowDetected(int index, PersonSpecification& personSpec)
 
 	ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
 	if (ImGui::Button("Authorize", ImVec2(100.0f, 20.0f))) {
-		indexRemove = GetIndexDetected(nameScreen);
-		SetPersonInside(indexRemove, personSpec);
+		if (!changeColor)
+		{
+			indexRemove = GetIndexDetected(nameScreen);
+			SetPersonInside(indexRemove, personSpec);
+
+		}
 	}
 	ImGui::PopStyleVar(1);
 	ImGui::EndGroup();
@@ -171,6 +211,7 @@ void FrameControlEntry::ShowDetected(int index, PersonSpecification& personSpec)
 	ImGui::PopFont();
 
 	ImGui::EndChild();
+	if (changeColor) ImGui::PopStyleColor();
 }
 
 void FrameControlEntry::SetPersonInside(int index, PersonSpecification& personSpec) {
@@ -210,9 +251,9 @@ void FrameControlEntry::SetNewsDetected()
 	{
 		for (int j = 0; j < listDetected.size(); j++)
 		{
-			std::string idDetect = &listDetected[j].id[0];
+			
 			std::string idTemp = &listDetectedTemp[i].id[0];
-			int idIntDet = atoi(idDetect.c_str());
+			int idIntDet = listDetected[j]; 
 			int idIntTemp = atoi(idTemp.c_str());
 			if (idIntDet == idIntTemp)
 			{
@@ -233,8 +274,14 @@ void FrameControlEntry::SetNewsDetected()
 
 			if (listDetectedTemp[i].txtCapture != 0 && listDetectedTemp[i].txtGallery != 0)
 			{
-				listDetected.push_back(listDetectedTemp.at(i));
+				listDetectedTemp[i].bufferCapture.clear();
+				listDetectedTemp[i].bufferGallery.clear();
+				listDetectedTemp[i].bufferDocumentObverse.clear();
+				listDetectedTemp[i].bufferDocumentReverse.clear();
 				listShowDetected.push_back(listDetectedTemp.at(i));
+				std::string idTemp = &listDetectedTemp.at(i).id[0];
+				int id = atoi(idTemp.c_str());
+				listDetected.push_back(id);
 			}
 
 		}

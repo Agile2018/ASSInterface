@@ -101,5 +101,9 @@ namespace ASSInterface {
 	{
 	}
 
+	void OpenCVTracking::ResetParams()
+	{
+	}
+
 
 }
