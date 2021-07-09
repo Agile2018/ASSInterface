@@ -71,309 +71,7 @@ namespace ASSInterface {
 		GetParamsDetectFace();
 		isSetParameters = false;
 	}
-
-	float InnoDetection::ICAOFeature(void* face) {
-		
-			//Default
-			/*Param EyeGaze : EYE_GAZE: < -400; 10000 > && EYE_STATUS_R && EYE_STATUS_L && FACE_CONFIDENCE
-			Param Mouth : MOUTH_STATUS: < 0; 10000 > && YAW && PITCH && FACE_CONFIDENCE
-			Param Pitch : PITCH: < -5500; 4500 > && FACE_CONFIDENCE
-			Param Yaw : YAW: < -5100; 5000 > && FACE_CONFIDENCE
-			Param Roll : ROLL: < -5000; 5000 > && FACE_CONFIDENCE*/
-
-		bool result = true;
-		float median = -1.0f;
-		int errorCode = IFACE_OK;
-		float scoreEyeGaze, scoreMouth, scorePitch, scoreYaw, scoreRoll;
-
-		errorCode = IFACE_SetParam(faceHandler, IFACE_PARAMETER_FACE_ATTRIBUTE_COND_EYE_GAZE, "EYE_GAZE:<-4000;10000>&&EYE_STATUS_L:<-3000;10000>&&EYE_STATUS_R:<-3000;10000>&&FACE_CONFIDENCE");
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-		
-		errorCode = IFACE_SetParam(faceHandler, IFACE_PARAMETER_FACE_ATTRIBUTE_COND_MOUTH_STATUS, "MOUTH_STATUS:<-4000;10000>&&FACE_CONFIDENCE");
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-
-		errorCode = IFACE_SetParam(faceHandler, IFACE_PARAMETER_FACE_ATTRIBUTE_COND_PITCH, "PITCH:<-9000;10000>&&FACE_CONFIDENCE");
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-
-		errorCode = IFACE_SetParam(faceHandler, IFACE_PARAMETER_FACE_ATTRIBUTE_COND_YAW,
-			"YAW:<-7000;8000>&&FACE_CONFIDENCE");
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-		
-		errorCode = IFACE_SetParam(faceHandler, IFACE_PARAMETER_FACE_ATTRIBUTE_COND_ROLL,
-			"ROLL:<-7000;7000>&&FACE_CONFIDENCE");
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-
-		IFACE_FaceAttributeDependenciesStatus faceAttributeDependenciesStatusPitch;
-		IFACE_FaceAttributeRangeStatus faceAttributeRangeStatusPitch;
-		IFACE_FaceAttributeDependenciesStatus faceAttributeDependenciesStatusYaw;
-		IFACE_FaceAttributeRangeStatus faceAttributeRangeStatusYaw;
-		IFACE_FaceAttributeDependenciesStatus faceAttributeDependenciesStatusRoll;
-		IFACE_FaceAttributeRangeStatus faceAttributeRangeStatusRoll;
-		IFACE_FaceAttributeDependenciesStatus faceAttributeDependenciesStatusEyeGaze;
-		IFACE_FaceAttributeRangeStatus faceAttributeRangeStatusEyeGaze;
-		IFACE_FaceAttributeDependenciesStatus faceAttributeDependenciesStatusMouth;
-		IFACE_FaceAttributeRangeStatus faceAttributeRangeStatusMouth;
-		bool icaoComplianceStatusEyeGaze = false;
-		bool icaoComplianceStatusMouth = false;
-		bool icaoComplianceStatusPitch = false;
-		bool icaoComplianceStatusYaw = false;
-		bool icaoComplianceStatusRoll = false;
-
-		errorCode = IFACE_GetFaceAttribute(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_YAW, &scoreYaw);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-		errorCode = IFACE_GetFaceAttributeRangeStatus(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_YAW, &faceAttributeRangeStatusYaw);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-		errorCode = IFACE_GetFaceAttributeDependenciesStatus(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_YAW, &faceAttributeDependenciesStatusYaw);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-
-		errorCode = IFACE_GetFaceAttribute(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_PITCH, &scorePitch);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-		errorCode = IFACE_GetFaceAttributeRangeStatus(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_PITCH, &faceAttributeRangeStatusPitch);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-		errorCode = IFACE_GetFaceAttributeDependenciesStatus(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_PITCH, &faceAttributeDependenciesStatusPitch);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-
-		errorCode = IFACE_GetFaceAttribute(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_ROLL, &scoreRoll);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-		errorCode = IFACE_GetFaceAttributeRangeStatus(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_ROLL, &faceAttributeRangeStatusRoll);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-		errorCode = IFACE_GetFaceAttributeDependenciesStatus(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_ROLL, &faceAttributeDependenciesStatusRoll);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-
-		errorCode = IFACE_GetFaceAttribute(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_EYE_GAZE, &scoreEyeGaze);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-		errorCode = IFACE_GetFaceAttributeRangeStatus(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_EYE_GAZE, &faceAttributeRangeStatusEyeGaze);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-		errorCode = IFACE_GetFaceAttributeDependenciesStatus(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_EYE_GAZE, &faceAttributeDependenciesStatusEyeGaze);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-
-		errorCode = IFACE_GetFaceAttribute(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_MOUTH_STATUS, &scoreMouth);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-		errorCode = IFACE_GetFaceAttributeRangeStatus(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_MOUTH_STATUS, &faceAttributeRangeStatusMouth);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-		errorCode = IFACE_GetFaceAttributeDependenciesStatus(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_MOUTH_STATUS, &faceAttributeDependenciesStatusMouth);
-		CheckError("InnoDetection::ICAOFeature", errorCode);
-
-				
-		if (faceAttributeRangeStatusEyeGaze == IFACE_FACE_ATTRIBUTE_RANGE_STATUS_IN_RANGE &&
-			faceAttributeDependenciesStatusEyeGaze == IFACE_FACE_ATTRIBUTE_DEPENDENCIES_STATUS_OK)
-		{
-			icaoComplianceStatusEyeGaze = true;
-		}
-
-		if (faceAttributeRangeStatusMouth == IFACE_FACE_ATTRIBUTE_RANGE_STATUS_IN_RANGE &&
-			faceAttributeDependenciesStatusMouth == IFACE_FACE_ATTRIBUTE_DEPENDENCIES_STATUS_OK)
-		{
-			icaoComplianceStatusMouth = true;
-		}
-
-		if (faceAttributeRangeStatusYaw == IFACE_FACE_ATTRIBUTE_RANGE_STATUS_IN_RANGE &&
-			faceAttributeDependenciesStatusYaw == IFACE_FACE_ATTRIBUTE_DEPENDENCIES_STATUS_OK)
-		{
-			icaoComplianceStatusYaw = true;
-		}
-
-		if (faceAttributeRangeStatusPitch == IFACE_FACE_ATTRIBUTE_RANGE_STATUS_IN_RANGE &&
-			faceAttributeDependenciesStatusPitch == IFACE_FACE_ATTRIBUTE_DEPENDENCIES_STATUS_OK)
-		{
-			icaoComplianceStatusPitch = true;
-		}
-
-		if (faceAttributeRangeStatusRoll == IFACE_FACE_ATTRIBUTE_RANGE_STATUS_IN_RANGE &&
-			faceAttributeDependenciesStatusRoll == IFACE_FACE_ATTRIBUTE_DEPENDENCIES_STATUS_OK)
-		{
-			icaoComplianceStatusRoll = true;
-		}
-
-		const unsigned int maxParamSize = 1000;
-		char parameterValueEyeGaze[maxParamSize];
-		char parameterValueMouth[maxParamSize];
-		char parameterValuePitch[maxParamSize];
-		char parameterValueYaw[maxParamSize];
-		char parameterValueRoll[maxParamSize];
-		
-		errorCode = IFACE_GetParam(faceHandler, IFACE_PARAMETER_FACE_ATTRIBUTE_COND_EYE_GAZE, 
-			parameterValueEyeGaze, maxParamSize);
-		errorCode = IFACE_GetParam(faceHandler, IFACE_PARAMETER_FACE_ATTRIBUTE_COND_MOUTH_STATUS,
-			parameterValueMouth, maxParamSize);
-		errorCode = IFACE_GetParam(faceHandler, IFACE_PARAMETER_FACE_ATTRIBUTE_COND_PITCH,
-			parameterValuePitch, maxParamSize);
-		errorCode = IFACE_GetParam(faceHandler, IFACE_PARAMETER_FACE_ATTRIBUTE_COND_YAW,
-			parameterValueYaw, maxParamSize);
-		errorCode = IFACE_GetParam(faceHandler, IFACE_PARAMETER_FACE_ATTRIBUTE_COND_ROLL,
-			parameterValueRoll, maxParamSize);
-
-		std::string depEyeGaze = FaceAttributeDependenciesStatusToString(faceAttributeDependenciesStatusEyeGaze);
-		std::string depMouth = FaceAttributeDependenciesStatusToString(faceAttributeDependenciesStatusMouth);
-		std::string depPitch = FaceAttributeDependenciesStatusToString(faceAttributeDependenciesStatusPitch);
-		std::string depYaw = FaceAttributeDependenciesStatusToString(faceAttributeDependenciesStatusYaw);
-		std::string depRoll = FaceAttributeDependenciesStatusToString(faceAttributeDependenciesStatusRoll);
-
-
-		std::size_t found = depEyeGaze.find("not fulfilled");
-		if (found != std::string::npos) depEyeGaze = "Not OK";
-		else depEyeGaze = "OK";
-		
-		found = depMouth.find("not fulfilled");
-		if (found != std::string::npos) depMouth = "Not OK";
-		else depMouth = "OK";
-
-		found = depPitch.find("not fulfilled");
-		if (found != std::string::npos) depPitch = "Not OK";
-		else depPitch = "OK";
-
-		found = depYaw.find("not fulfilled");
-		if (found != std::string::npos) depYaw = "Not OK";
-		else depYaw = "OK";
-
-		found = depRoll.find("not fulfilled");
-		if (found != std::string::npos) depRoll = "Not OK";
-		else depRoll = "OK";
-
-		std::string rangeEyeGaze = FaceAttributeRangeStatusToString(faceAttributeRangeStatusEyeGaze);
-		std::string rangeMouth = FaceAttributeRangeStatusToString(faceAttributeRangeStatusMouth);
-		std::string rangePitch = FaceAttributeRangeStatusToString(faceAttributeRangeStatusPitch);
-		std::string rangeYaw = FaceAttributeRangeStatusToString(faceAttributeRangeStatusYaw);
-		std::string rangeRoll = FaceAttributeRangeStatusToString(faceAttributeRangeStatusRoll);
-
-
-		found = rangeEyeGaze.find("not compliant");
-		if (found != std::string::npos) {
-			std::size_t foundBad = rangeEyeGaze.find("(");
-			rangeEyeGaze = rangeEyeGaze.substr(foundBad);
-			
-		}
-		else
-		{
-			rangeEyeGaze = "In range";
-		}
-
-		found = rangeMouth.find("not compliant");
-		if (found != std::string::npos) {
-			std::size_t foundBad = rangeMouth.find("(");
-			rangeMouth = rangeMouth.substr(foundBad);
-
-		}
-		else
-		{
-			rangeMouth = "In range";
-		}
-
-
-		found = rangePitch.find("not compliant");
-		if (found != std::string::npos) {
-			std::size_t foundBad = rangePitch.find("(");
-			rangePitch = rangePitch.substr(foundBad);
-
-		}
-		else
-		{
-			rangePitch = "In range";
-		}
-
-		found = rangeYaw.find("not compliant");
-		if (found != std::string::npos) {
-			std::size_t foundBad = rangeYaw.find("(");
-			rangeYaw = rangeYaw.substr(foundBad);
-
-		}
-		else
-		{
-			rangeYaw = "In range";
-		}
-
-		found = rangeRoll.find("not compliant");
-		if (found != std::string::npos) {
-			std::size_t foundBad = rangeRoll.find("(");
-			rangeRoll = rangeRoll.substr(foundBad);
-
-		}
-		else
-		{
-			rangeRoll = "In range";
-		}
-
-
-		std::string complianceEyeGaze = IcaoFinalComplianceToString(icaoComplianceStatusEyeGaze);
-		std::string complianceMouth = IcaoFinalComplianceToString(icaoComplianceStatusMouth);
-		std::string compliancePitch = IcaoFinalComplianceToString(icaoComplianceStatusPitch);
-		std::string complianceYaw = IcaoFinalComplianceToString(icaoComplianceStatusYaw);
-		std::string complianceRoll = IcaoFinalComplianceToString(icaoComplianceStatusRoll);
-
-		
-		found = complianceEyeGaze.find("not compliant");
-		if (found != std::string::npos) {
-			complianceEyeGaze = "Not-valid";
-			result = false;
-		}
-		else complianceEyeGaze = "Valid";
-
-		found = complianceMouth.find("not compliant");
-		if (found != std::string::npos) {
-			complianceMouth = "Not-valid";
-			result = false;
-		}
-		else complianceMouth = "Valid";
-
-		found = compliancePitch.find("not compliant");
-		if (found != std::string::npos) {
-			compliancePitch = "Not-valid";
-			result = false;
-		}
-		else compliancePitch = "Valid";
-
-		found = complianceYaw.find("not compliant");
-		if (found != std::string::npos) {
-			complianceYaw = "Not-valid";
-			result = false;
-		}
-		else complianceYaw = "Valid";
-
-		found = complianceRoll.find("not compliant");
-		if (found != std::string::npos) {
-			complianceRoll = "Not-valid";
-			result = false;
-		}
-		else complianceRoll = "Valid";
-
-
-		ASS_INFO("--------------------------------------------------------------------------");
-		ASS_INFO("Param EyeGaze : {0}", parameterValueEyeGaze);
-		ASS_INFO("Param Mouth : {0}", parameterValueMouth);
-		ASS_INFO("Param Pitch : {0}", parameterValuePitch);
-		ASS_INFO("Param Yaw : {0}", parameterValueYaw);
-		ASS_INFO("Param Roll : {0}", parameterValueRoll);
-		ASS_INFO("--------------------------------------------------------------------------");
-
-		ASS_INFO("Feature   Score/value         Dependencies    Range compliance   |  ICAO Status");
-		ASS_INFO("--------------------------------------------------------------------------------------------------");
-		ASS_INFO("EYE_GAZE  {0}                 {1}             {2}                |  {3}", 
-			scoreEyeGaze, depEyeGaze, rangeEyeGaze, complianceEyeGaze);
-		ASS_INFO("MOUTH     {0}                 {1}             {2}                |  {3}",
-			scoreMouth, depMouth, rangeMouth, complianceMouth);
-		ASS_INFO("PITCH     {0}                 {1}             {2}                |  {3}",
-			scorePitch, depPitch, rangePitch, compliancePitch);
-		ASS_INFO("YAW     {0}                 {1}             {2}                |  {3}",
-			scoreYaw, depYaw, rangeYaw, complianceYaw);
-		ASS_INFO("ROLL     {0}                 {1}             {2}                |  {3}",
-			scoreRoll, depRoll, rangeRoll, complianceRoll);
-
-		if (result)
-		{
-			std::vector<float> icaoScore;
-			icaoScore.push_back(scoreEyeGaze);
-			icaoScore.push_back(scoreMouth);
-			icaoScore.push_back(scorePitch);
-			icaoScore.push_back(scoreYaw);
-			icaoScore.push_back(scoreRoll);
-
-			std::sort(icaoScore.rbegin(), icaoScore.rend());
-			median = icaoScore[2];
-		}
-
-		return median;
-
-	}
+	
 
 	std::vector<void*> InnoDetection::Detect(std::vector<float>& icaoScore)
 	{
@@ -416,9 +114,9 @@ namespace ASSInterface {
 					//CheckError("InnoDetection::Detect", errorCode);
 
 					
-					float icao = ICAOFeature(face);
+					/*float icao = ICAOFeature(face);
 					if (icao != -1.0f)
-					{
+					{*/
 						void* faceClone = nullptr;
 
 						errorCode = IFACE_CreateEntity(IFACE_ENTITY_TYPE_FACE, &faceClone);
@@ -431,12 +129,12 @@ namespace ASSInterface {
 							icaoScore.push_back(icao);
 						}
 						
-					}
+					/*}
 					else
 					{						
 						ASSInterface::ImGuiLog::AddLog("[%s], date: [%s], channel: [%01d], ICAO_Feature: [%s], result: [%s]\n", ASSInterface::ImGuiLog::Categories(1),
 							ASSInterface::DateTime::Now().c_str(), indexChannel, "False", "Rejected");
-					}
+					}*/
 					
 				}
 
@@ -1042,10 +740,10 @@ namespace ASSInterface {
 						//errorCode = IFACE_GetFaceAttribute(face, faceHandler, IFACE_FACE_ATTRIBUTE_ID_EYE_DISTANCE, &eyeDist);
 						//CheckError("InnoDetection::BuildTemplateOfFile", errorCode);
 
-						float icao = ICAOFeature(face);
+						/*float icao = ICAOFeature(face);
 						
 						if (icao != -1.0f)
-						{
+						{*/
 							int templateSize;
 							errorCode = IFACE_CreateTemplate(face, faceHandler, 0, &templateSize, NULL);
 							CheckError("InnoDetection::BuildTemplateOfFile", errorCode);
@@ -1098,12 +796,12 @@ namespace ASSInterface {
 								}
 								delete[] templateData;
 							}
-						}
-						else
+						//}
+						/*else
 						{
 							ASSInterface::ImGuiLog::AddLog("[%s], date: [%s], channel: [%01d], ICAO_Feature: [%s], result: [%s]\n", ASSInterface::ImGuiLog::Categories(1),
 								ASSInterface::DateTime::Now().c_str(), indexChannel, "False", "Rejected");
-						}
+						}*/
 
 					}
 				}

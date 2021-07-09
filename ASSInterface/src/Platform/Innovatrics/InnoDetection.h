@@ -49,7 +49,7 @@ namespace ASSInterface {
 			int task, std::vector<char> faceSerialized, std::vector<float> icaoScore, int id = -1, int idx = -1);
 		void BuildSpecificationForIdentify(int task, int id = -1, int index = -1);
 		void BuildTemplateOfFile(std::string file);		
-		float ICAOFeature(void* face);
+		
 	private:		
 		Rx::subject<std::vector<DetectSpecification>> specSubject;
 		Rx::observable<std::vector<DetectSpecification>> observableSpecDetected = specSubject.get_observable();

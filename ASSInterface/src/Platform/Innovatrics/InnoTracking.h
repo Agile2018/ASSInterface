@@ -43,7 +43,7 @@ namespace ASSInterface {
 		void DoHomework(int indexTracked);
 		void CreateFace(int indexTracked);
 		void BuildSpecificationForIdentify(void* face);
-		float ICAOFeature(void* face);
+		
 	private:				
 		Rx::subject<DetectSpecification> specSubject;
 		Rx::observable<DetectSpecification> observableSpecDetect = specSubject.get_observable();
