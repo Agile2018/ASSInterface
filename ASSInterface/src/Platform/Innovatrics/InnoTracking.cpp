@@ -718,7 +718,7 @@ namespace ASSInterface {
 		CreateTemplate(face, specDetect);
 		
 
-		if (specDetect.sizeTemplate != 0 && !specCrop.cropData.empty() && icao != -1.0f)
+		if (specDetect.sizeTemplate != 0 && !specCrop.cropData.empty() )
 		{			
 			specDetect.cropSpec.length = specCrop.length;
 			specDetect.cropSpec.width = specCrop.width;
